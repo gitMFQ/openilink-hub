@@ -71,6 +71,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CGO_ENABLED: "1"
+      # 提到 job 级 env，便于下面的步骤用 if: 判断凭据是否存在
+      # （secrets 上下文不能直接用在 if 里）。
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -101,8 +105,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Requires DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets
+      # Requires DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets.
+      # 没有这两个 secret 的仓库（例如 fork）会跳过镜像发布：不登录 Docker Hub，
+      # 并让 GoReleaser 跳过 docker/docker_manifests，只产出二进制与 Release。
+      - name: Resolve docker publishing
+        run: |
+          if [ -z "${DOCKERHUB_TOKEN}" ]; then
+            echo "DOCKERHUB_TOKEN 未配置：跳过容器镜像发布" >> "$GITHUB_STEP_SUMMARY"
+            echo "GORELEASER_SKIP_DOCKER=,docker" >> "$GITHUB_ENV"
+          fi
+
       - name: Login to Docker Hub
+        if: env.DOCKERHUB_TOKEN != ''
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -116,7 +130,7 @@ jobs:
         with:
           version: "~> v2"
           args: >-
-            release --skip=validate
+            release --skip=validate${{ env.GORELEASER_SKIP_DOCKER }}
             ${{ github.event_name == 'workflow_dispatch' && '--snapshot --clean' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
