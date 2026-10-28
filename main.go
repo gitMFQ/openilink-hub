@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,21 +13,21 @@ import (
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
-	appdelivery "github.com/openilink/openilink-hub/internal/app"
 	"github.com/openilink/openilink-hub/internal/api"
+	appdelivery "github.com/openilink/openilink-hub/internal/app"
 	"github.com/openilink/openilink-hub/internal/auth"
 	"github.com/openilink/openilink-hub/internal/bot"
 	"github.com/openilink/openilink-hub/internal/builtin"
 	"github.com/openilink/openilink-hub/internal/config"
 	"github.com/openilink/openilink-hub/internal/daemon"
 	"github.com/openilink/openilink-hub/internal/push"
+	"github.com/openilink/openilink-hub/internal/registry"
 	"github.com/openilink/openilink-hub/internal/relay"
 	"github.com/openilink/openilink-hub/internal/sink"
+	"github.com/openilink/openilink-hub/internal/storage"
 	"github.com/openilink/openilink-hub/internal/store"
 	"github.com/openilink/openilink-hub/internal/store/postgres"
 	"github.com/openilink/openilink-hub/internal/store/sqlite"
-	"github.com/openilink/openilink-hub/internal/registry"
-	"github.com/openilink/openilink-hub/internal/storage"
 
 	// Register providers
 	_ "github.com/openilink/openilink-hub/internal/provider/ilink"
@@ -51,6 +52,21 @@ func openStore(dsn string) (store.Store, error) {
 		return postgres.Open(dsn)
 	}
 	return sqlite.Open(dsn)
+}
+
+// displayURL renders a browsable URL for a listen address. A bare ":9800" and
+// wildcard hosts (0.0.0.0, ::) are shown as localhost, while an explicit host
+// keeps its own name — "http://localhost0.0.0.0:9800" would be misleading.
+func displayURL(addr string) string {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "http://localhost" + addr
+	}
+	switch host {
+	case "", "0.0.0.0", "::":
+		host = "localhost"
+	}
+	return "http://" + net.JoinHostPort(host, port)
 }
 
 func main() {
@@ -223,7 +239,7 @@ func main() {
 		httpSrv.Shutdown(shutCtx)
 	}()
 
-	fmt.Printf("OpeniLink Hub %s (%s, %s) running on http://localhost%s\n", version, commit, date, cfg.ListenAddr)
+	fmt.Printf("OpeniLink Hub %s (%s, %s) running on %s\n", version, commit, date, displayURL(cfg.ListenAddr))
 	fmt.Printf("Data: %s\n", config.DataDir())
 	if err := httpSrv.ListenAndServe(); err != http.ErrServerClosed {
 		slog.Error("server error", "err", err)
