@@ -36,6 +36,12 @@ jobs:
   # --- Build darwin binaries on native macOS runners ---
   darwin:
     needs: frontend
+    # macOS 托管 runner 偶发容量不足，表现为
+    # "The job was not acquired by Runner of type hosted even after multiple attempts"。
+    # 这属于基础设施问题，不该让整条发布链路失败：release job 会照常发布
+    # Linux 产物与 Release，darwin 的 tarball 待 runner 恢复后重跑本 job、
+    # 再补传到同一个 Release 即可。
+    continue-on-error: true
     strategy:
       matrix:
         include:
@@ -88,7 +94,10 @@ jobs:
           name: frontend-dist
           path: internal/web/dist/
 
+      # darwin job 失败/被跳过时没有 darwin-* 产物，download-artifact 会因
+      # 匹配不到 artifact 而报错，所以这里显式判断。
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        if: needs.darwin.result == 'success'
         with:
           pattern: darwin-*
           path: darwin-archives/
