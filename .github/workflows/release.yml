@@ -87,6 +87,14 @@ jobs:
       - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
       - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
+      # fork 的 checkout 里只有自己的 tag，goreleaser 找不到上一个 tag 时会退化成
+      # 把整段历史写进 changelog。补拉上游 tag，让发布说明只覆盖本次发布的提交。
+      - name: Fetch upstream tags for changelog
+        continue-on-error: true
+        run: |
+          git remote add upstream https://github.com/openilink/openilink-hub.git 2>/dev/null || true
+          git fetch --tags --force --quiet upstream
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@9a127d869fb706213d29cdf8eef3a4ea2b869415 # v7
         with:
