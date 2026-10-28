@@ -1,5 +1,12 @@
 version: 2
 
+# 只构建 Linux arm64：silk 语音解码依赖 CGO，当前只维护 aarch64 的构建链路
+# （本地 aarch64 与 CI 上的 aarch64-linux-gnu-gcc 交叉编译）。
+#
+# Release 落在哪个仓库由 goreleaser 从当前 checkout 的 remote 推断，因此上游与
+# fork 共用这一份配置。容器镜像仍固定发布到上游命名空间（ghcr.io / docker.io 的
+# openilink），需要 DOCKERHUB_USERNAME/DOCKERHUB_TOKEN；没有这些 secret 的仓库
+# （例如 fork）由 release workflow 用 --skip=docker 跳过镜像发布，只产出二进制。
 project_name: openilink-hub
 
 before:
@@ -7,20 +14,6 @@ before:
     - go mod tidy
 
 builds:
-  - id: linux-amd64
-    binary: oih
-    goos: [linux]
-    goarch: [amd64]
-    env:
-      - CGO_ENABLED=1
-      - CC=gcc
-      - CGO_CFLAGS=-Wno-stringop-overread -Wno-constant-conversion
-    ldflags: &ldflags
-      - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.ShortCommit}}
-      - -X main.date={{.Date}}
-
   - id: linux-arm64
     binary: oih
     goos: [linux]
@@ -29,7 +22,11 @@ builds:
       - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
       - CGO_CFLAGS=-Wno-stringop-overread -Wno-constant-conversion
-    ldflags: *ldflags
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
 
 archives:
   - id: default
@@ -40,8 +37,6 @@ archives:
 
 checksum:
   name_template: checksums.txt
-  extra_files:
-    - glob: darwin-archives/*
 
 changelog:
   sort: asc
@@ -51,31 +46,14 @@ changelog:
       - "^test:"
       - "^chore:"
 
-release:
-  # GitHub Release 落在哪个仓库由 goreleaser 从当前 checkout 的 remote 推断，
-  # 因此上游和 fork 用同一份配置都能发版。这里刻意不写死 owner/name。
-  #
-  # 容器镜像仍固定发布到上游命名空间（ghcr.io/docker.io 的 openilink），
-  # 需要 DOCKERHUB_USERNAME/DOCKERHUB_TOKEN；没有这些 secret 的仓库（例如
-  # fork）由 release workflow 用 --skip=docker 跳过镜像发布，只产出二进制。
-  extra_files:
-    - glob: darwin-archives/*
-
 dockers:
   - image_templates:
-      - "ghcr.io/openilink/openilink-hub:{{ .Version }}-amd64"
-      - "docker.io/openilink/openilink-hub:{{ .Version }}-amd64"
-    use: buildx
-    dockerfile: Dockerfile.release
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.source=https://github.com/openilink/openilink-hub"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-    ids: [linux-amd64]
-  - image_templates:
       - "ghcr.io/openilink/openilink-hub:{{ .Version }}-arm64"
+      - "ghcr.io/openilink/openilink-hub:{{ .Version }}"
+      - "ghcr.io/openilink/openilink-hub:latest"
       - "docker.io/openilink/openilink-hub:{{ .Version }}-arm64"
+      - "docker.io/openilink/openilink-hub:{{ .Version }}"
+      - "docker.io/openilink/openilink-hub:latest"
     use: buildx
     dockerfile: Dockerfile.release
     build_flag_templates:
@@ -85,20 +63,3 @@ dockers:
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
     ids: [linux-arm64]
     goarch: arm64
-docker_manifests:
-  - name_template: "ghcr.io/openilink/openilink-hub:{{ .Version }}"
-    image_templates:
-      - "ghcr.io/openilink/openilink-hub:{{ .Version }}-amd64"
-      - "ghcr.io/openilink/openilink-hub:{{ .Version }}-arm64"
-  - name_template: "ghcr.io/openilink/openilink-hub:latest"
-    image_templates:
-      - "ghcr.io/openilink/openilink-hub:{{ .Version }}-amd64"
-      - "ghcr.io/openilink/openilink-hub:{{ .Version }}-arm64"
-  - name_template: "docker.io/openilink/openilink-hub:{{ .Version }}"
-    image_templates:
-      - "docker.io/openilink/openilink-hub:{{ .Version }}-amd64"
-      - "docker.io/openilink/openilink-hub:{{ .Version }}-arm64"
-  - name_template: "docker.io/openilink/openilink-hub:latest"
-    image_templates:
-      - "docker.io/openilink/openilink-hub:{{ .Version }}-amd64"
-      - "docker.io/openilink/openilink-hub:{{ .Version }}-arm64"

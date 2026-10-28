@@ -71,10 +71,11 @@ main() {
     OS=$(detect_os)
     ARCH=$(detect_arch)
 
-    # Check platform support
-    if [ "$OS" = "linux" ] && [ "$ARCH" = "arm64" ]; then
-        error "Linux ARM64 is not yet supported (silk audio codec requires CGO fix). Use Docker instead:
-  docker run -d -p 9800:9800 ghcr.io/openilink/openilink-hub:latest"
+    # 发布产物只有 Linux arm64 二进制；其他平台请走 Docker
+    if [ "$OS" != "linux" ] || [ "$ARCH" != "arm64" ]; then
+        error "Only Linux arm64 builds are published (detected ${OS}/${ARCH}). Use Docker instead:
+  docker run -d -p 9800:9800 openilink/openilink-hub:latest
+See https://github.com/${REPO}#install for details."
     fi
 
     info "Detected: ${OS}/${ARCH}"

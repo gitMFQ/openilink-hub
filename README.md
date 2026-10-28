@@ -34,7 +34,7 @@
 ## 快速开始
 
 ```bash
-# 一键安装（Linux / macOS）
+# 一键安装（仅 Linux arm64；其他平台请用 Docker）
 curl -fsSL https://raw.githubusercontent.com/openilink/openilink-hub/main/install.sh | sh
 
 # 启动
@@ -484,7 +484,7 @@ It wraps WeChat's raw messaging into a complete system: bind multiple accounts v
 ### Quick Start
 
 ```bash
-# One-line install
+# One-line install (Linux arm64 only; use Docker on other platforms)
 curl -fsSL https://raw.githubusercontent.com/openilink/openilink-hub/main/install.sh | sh
 
 # Start
