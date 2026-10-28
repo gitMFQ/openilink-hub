@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -60,7 +60,7 @@ func (s *Server) handleGetOAuthConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // PUT /api/admin/config/oauth/{provider} — set OAuth config for a provider
@@ -75,7 +75,7 @@ func (s *Server) handleSetOAuthConfig(w http.ResponseWriter, r *http.Request) {
 		ClientID     string `json:"client_id"`
 		ClientSecret string `json:"client_secret"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -118,7 +118,7 @@ func (s *Server) handleDeleteOAuthConfig(w http.ResponseWriter, r *http.Request)
 func (s *Server) handleGetAvailableModels(w http.ResponseWriter, r *http.Request) {
 	dbConf, _ := s.Store.ListConfigByPrefix("ai.")
 	raw := dbConf["ai.available_models"]
-	if raw == "" || !json.Valid([]byte(raw)) {
+	if raw == "" || !jsonx.Valid([]byte(raw)) {
 		raw = "[]"
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -147,23 +147,23 @@ func (s *Server) handleGetAIConfig(w http.ResponseWriter, r *http.Request) {
 		result["enabled"] = "true"
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // PUT /api/admin/config/ai — set global AI config
 func (s *Server) handleSetAIConfig(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		BaseURL         string `json:"base_url"`
-		APIKey          string `json:"api_key"`
-		Model           string `json:"model"`
-		SystemPrompt    string `json:"system_prompt"`
-		MaxHistory      string `json:"max_history"`
-		HideThinking    string `json:"hide_thinking"`
-		StripMarkdown   string `json:"strip_markdown"`
-		AvailableModels string `json:"available_models"`
+		BaseURL         string  `json:"base_url"`
+		APIKey          string  `json:"api_key"`
+		Model           string  `json:"model"`
+		SystemPrompt    string  `json:"system_prompt"`
+		MaxHistory      string  `json:"max_history"`
+		HideThinking    string  `json:"hide_thinking"`
+		StripMarkdown   string  `json:"strip_markdown"`
+		AvailableModels string  `json:"available_models"`
 		CustomHeaders   *string `json:"custom_headers"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -197,7 +197,7 @@ func (s *Server) handleSetAIConfig(w http.ResponseWriter, r *http.Request) {
 	if req.CustomHeaders != nil {
 		if *req.CustomHeaders == "" {
 			s.Store.DeleteConfig("ai.custom_headers")
-		} else if !json.Valid([]byte(*req.CustomHeaders)) {
+		} else if !jsonx.Valid([]byte(*req.CustomHeaders)) {
 			jsonError(w, "custom_headers must be valid JSON", http.StatusBadRequest)
 			return
 		} else {
@@ -225,7 +225,7 @@ func (s *Server) handleDeleteAIConfig(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleInfo(w http.ResponseWriter, r *http.Request) {
 	globalAI, _ := s.Store.ListConfigByPrefix("ai.")
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"ai":                   globalAI["ai.api_key"] != "",
 		"storage":              s.Config.StorageEndpoint != "",
 		"registration_enabled": s.registrationEnabled(),
@@ -254,7 +254,7 @@ func (s *Server) handleGetRegistrationConfig(w http.ResponseWriter, r *http.Requ
 		enabled = "true"
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	jsonx.NewEncoder(w).Encode(map[string]string{
 		"enabled": enabled,
 	})
 }
@@ -264,7 +264,7 @@ func (s *Server) handleSetRegistrationConfig(w http.ResponseWriter, r *http.Requ
 	var req struct {
 		Enabled string `json:"enabled"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -286,7 +286,7 @@ func (s *Server) handleGetRegistryConfig(w http.ResponseWriter, r *http.Request)
 		slog.Error("failed to get registry config", "err", err)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	jsonx.NewEncoder(w).Encode(map[string]string{
 		"enabled": enabled,
 	})
 }
@@ -296,7 +296,7 @@ func (s *Server) handleSetRegistryConfig(w http.ResponseWriter, r *http.Request)
 	var req struct {
 		Enabled string `json:"enabled"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}

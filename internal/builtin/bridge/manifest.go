@@ -1,7 +1,7 @@
 package bridge
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/openilink/openilink-hub/internal/builtin"
 )
@@ -16,7 +16,7 @@ func init() {
 		Guide:       "## Bridge\n\n### 接收消息\n\n**方式一：HTTP 转发**\n\n配置转发地址后，Bot 收到的消息会自动 POST 到该地址。\n\n**方式二：WebSocket**\n\n```\nwss://{hub_url}/bot/v1/ws?token={your_token}\n```\n\n连接后自动接收 Bot 的所有消息。\n\n### 发送消息\n\n```bash\ncurl -X POST {hub_url}/bot/v1/message/send \\\n  -H \"Authorization: Bearer {your_token}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"content\":\"hello\"}'\n```\n\n或通过 WebSocket 发送：\n```json\n{\"type\":\"send\",\"content\":\"hello\"}\n```",
 		Scopes:      []string{"message:read", "message:write"},
 		Events:      []string{"message"},
-		ConfigSchema: json.RawMessage(`{
+		ConfigSchema: jsonx.RawMessage(`{
 			"type": "object",
 			"properties": {
 				"forward_url": {

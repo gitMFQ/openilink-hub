@@ -1,7 +1,7 @@
 package relay
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"time"
 
@@ -35,7 +35,7 @@ func NewConn(channelID, botID string, ws *websocket.Conn, hub *Hub) *Conn {
 }
 
 func (c *Conn) Send(env Envelope) {
-	data, err := json.Marshal(env)
+	data, err := jsonx.Marshal(env)
 	if err != nil {
 		return
 	}
@@ -67,7 +67,7 @@ func (c *Conn) ReadPump() {
 		}
 
 		var env Envelope
-		if err := json.Unmarshal(msg, &env); err != nil {
+		if err := jsonx.Unmarshal(msg, &env); err != nil {
 			continue
 		}
 

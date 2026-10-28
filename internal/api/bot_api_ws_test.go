@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -80,7 +80,7 @@ func TestBotAPIWebSocket_Connect(t *testing.T) {
 			t.Fatalf("read init: %v", err)
 		}
 		var initMsg map[string]any
-		if err := json.Unmarshal(message, &initMsg); err != nil {
+		if err := jsonx.Unmarshal(message, &initMsg); err != nil {
 			t.Fatalf("unmarshal init: %v", err)
 		}
 		if initMsg["type"] != "init" {
@@ -163,7 +163,7 @@ func TestBotAPIWebSocket_PingPong(t *testing.T) {
 	}
 
 	// Send ping
-	pingMsg, _ := json.Marshal(map[string]string{"type": "ping"})
+	pingMsg, _ := jsonx.Marshal(map[string]string{"type": "ping"})
 	if err := ws.WriteMessage(websocket.TextMessage, pingMsg); err != nil {
 		t.Fatalf("write ping: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestBotAPIWebSocket_PingPong(t *testing.T) {
 		t.Fatalf("read pong: %v", err)
 	}
 	var pongMsg map[string]any
-	if err := json.Unmarshal(message, &pongMsg); err != nil {
+	if err := jsonx.Unmarshal(message, &pongMsg); err != nil {
 		t.Fatalf("unmarshal pong: %v", err)
 	}
 	if pongMsg["type"] != "pong" {
@@ -206,7 +206,7 @@ func TestBotAPIWebSocket_SendNoBot(t *testing.T) {
 	_, _, _ = ws.ReadMessage()
 
 	// Send message (will fail because BotManager is nil / bot not connected)
-	sendMsg, _ := json.Marshal(map[string]any{
+	sendMsg, _ := jsonx.Marshal(map[string]any{
 		"type":    "send",
 		"req_id":  "r1",
 		"content": "hello",
@@ -223,7 +223,7 @@ func TestBotAPIWebSocket_SendNoBot(t *testing.T) {
 		t.Fatalf("read response: %v", err)
 	}
 	var resp map[string]any
-	if err := json.Unmarshal(message, &resp); err != nil {
+	if err := jsonx.Unmarshal(message, &resp); err != nil {
 		t.Fatalf("unmarshal response: %v", err)
 	}
 	if resp["type"] != "error" {
@@ -258,7 +258,7 @@ func TestBotAPIWebSocket_SendMissingScope(t *testing.T) {
 	_, _, _ = ws.ReadMessage()
 
 	// Try to send (should fail with missing scope)
-	sendMsg, _ := json.Marshal(map[string]any{
+	sendMsg, _ := jsonx.Marshal(map[string]any{
 		"type":    "send",
 		"req_id":  "r2",
 		"content": "hello",
@@ -275,7 +275,7 @@ func TestBotAPIWebSocket_SendMissingScope(t *testing.T) {
 		t.Fatalf("read response: %v", err)
 	}
 	var resp map[string]any
-	if err := json.Unmarshal(message, &resp); err != nil {
+	if err := jsonx.Unmarshal(message, &resp); err != nil {
 		t.Fatalf("unmarshal response: %v", err)
 	}
 	if resp["type"] != "error" {

@@ -1,8 +1,8 @@
 package registry
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,21 +12,21 @@ import (
 )
 
 type App struct {
-	Slug             string          `json:"slug"`
-	Name             string          `json:"name"`
-	Description      string          `json:"description"`
-	Readme           string          `json:"readme,omitempty"`
-	Guide            string          `json:"guide,omitempty"`
-	Version          string          `json:"version"`
-	Author           string          `json:"author"`
-	IconURL          string          `json:"icon_url"`
-	Homepage         string          `json:"homepage"`
-	WebhookURL       string          `json:"webhook_url,omitempty"`
-	OAuthSetupURL    string          `json:"oauth_setup_url,omitempty"`
-	OAuthRedirectURL string          `json:"oauth_redirect_url,omitempty"`
-	Tools            json.RawMessage `json:"tools"`
-	Events           json.RawMessage `json:"events"`
-	Scopes           json.RawMessage `json:"scopes"`
+	Slug             string           `json:"slug"`
+	Name             string           `json:"name"`
+	Description      string           `json:"description"`
+	Readme           string           `json:"readme,omitempty"`
+	Guide            string           `json:"guide,omitempty"`
+	Version          string           `json:"version"`
+	Author           string           `json:"author"`
+	IconURL          string           `json:"icon_url"`
+	Homepage         string           `json:"homepage"`
+	WebhookURL       string           `json:"webhook_url,omitempty"`
+	OAuthSetupURL    string           `json:"oauth_setup_url,omitempty"`
+	OAuthRedirectURL string           `json:"oauth_redirect_url,omitempty"`
+	Tools            jsonx.RawMessage `json:"tools"`
+	Events           jsonx.RawMessage `json:"events"`
+	Scopes           jsonx.RawMessage `json:"scopes"`
 }
 
 type Manifest struct {
@@ -171,7 +171,7 @@ func (c *Client) fetchSource(src *Source) ([]App, error) {
 	}
 
 	var manifest Manifest
-	if err := json.Unmarshal(body, &manifest); err != nil {
+	if err := jsonx.Unmarshal(body, &manifest); err != nil {
 		if src.cache != nil {
 			return src.cache.Apps, nil
 		}

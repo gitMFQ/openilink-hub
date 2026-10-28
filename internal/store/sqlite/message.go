@@ -2,7 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"time"
 
 	"github.com/openilink/openilink-hub/internal/store"
@@ -33,10 +33,10 @@ func scanMessage(scanner interface{ Scan(...any) error }) (*store.Message, error
 
 func (db *DB) SaveMessage(m *store.Message) (store.SaveResult, error) {
 	if m.ItemList == nil {
-		m.ItemList = json.RawMessage(`[]`)
+		m.ItemList = jsonx.RawMessage(`[]`)
 	}
 	if m.MediaKeys == nil {
-		m.MediaKeys = json.RawMessage(`{}`)
+		m.MediaKeys = jsonx.RawMessage(`{}`)
 	}
 
 	tx, err := db.Begin()
@@ -164,9 +164,9 @@ func (db *DB) HasFreshContextToken(botID string, maxAge time.Duration) bool {
 	return count > 0
 }
 
-func (db *DB) UpdateMediaStatus(botID, status string, keys json.RawMessage) error {
+func (db *DB) UpdateMediaStatus(botID, status string, keys jsonx.RawMessage) error {
 	if keys == nil {
-		keys = json.RawMessage(`{}`)
+		keys = jsonx.RawMessage(`{}`)
 	}
 	_, err := db.Exec(`UPDATE messages SET media_status = ?, media_keys = ?
 		WHERE bot_id = ? AND media_status = 'downloading'`,
@@ -174,35 +174,35 @@ func (db *DB) UpdateMediaStatus(botID, status string, keys json.RawMessage) erro
 	return err
 }
 
-func (db *DB) UpdateMediaStatusByID(id int64, status string, keys json.RawMessage) error {
+func (db *DB) UpdateMediaStatusByID(id int64, status string, keys jsonx.RawMessage) error {
 	if keys == nil {
-		keys = json.RawMessage(`{}`)
+		keys = jsonx.RawMessage(`{}`)
 	}
 	_, err := db.Exec(`UPDATE messages SET media_status = ?, media_keys = ? WHERE id = ?`,
 		status, keys, id)
 	return err
 }
 
-func (db *DB) UpdateMessagePayload(id int64, payload json.RawMessage) error {
+func (db *DB) UpdateMessagePayload(id int64, payload jsonx.RawMessage) error {
 	var p map[string]any
-	json.Unmarshal(payload, &p)
+	jsonx.Unmarshal(payload, &p)
 	status, _ := p["media_status"].(string)
-	keys := json.RawMessage(`{}`)
+	keys := jsonx.RawMessage(`{}`)
 	if k, ok := p["media_key"].(string); ok {
-		keys, _ = json.Marshal(map[string]string{"0": k})
+		keys, _ = jsonx.Marshal(map[string]string{"0": k})
 	}
 	_, err := db.Exec("UPDATE messages SET media_status = ?, media_keys = ? WHERE id = ?",
 		status, keys, id)
 	return err
 }
 
-func (db *DB) UpdateMediaPayloads(botID, eqp string, newPayload json.RawMessage) error {
+func (db *DB) UpdateMediaPayloads(botID, eqp string, newPayload jsonx.RawMessage) error {
 	var p map[string]any
-	json.Unmarshal(newPayload, &p)
+	jsonx.Unmarshal(newPayload, &p)
 	status, _ := p["media_status"].(string)
-	keys := json.RawMessage(`{}`)
+	keys := jsonx.RawMessage(`{}`)
 	if k, ok := p["media_key"].(string); ok {
-		keys, _ = json.Marshal(map[string]string{"0": k})
+		keys, _ = jsonx.Marshal(map[string]string{"0": k})
 	}
 	_, err := db.Exec(`UPDATE messages SET media_status = ?, media_keys = ?
 		WHERE bot_id = ? AND media_status = 'downloading'`,

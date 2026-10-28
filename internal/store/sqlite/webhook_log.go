@@ -1,8 +1,8 @@
 package sqlite
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/openilink/openilink-hub/internal/store"
 )
@@ -31,7 +31,7 @@ func (db *DB) UpdateWebhookLogResponse(id int64, status string, respStatus int, 
 }
 
 func (db *DB) UpdateWebhookLogResult(id int64, status, scriptError string, replies []string) error {
-	repliesJSON, _ := json.Marshal(replies)
+	repliesJSON, _ := jsonx.Marshal(replies)
 	_, err := db.Exec(`UPDATE webhook_logs SET status=?, script_error=?, replies=?, updated_at=? WHERE id=?`,
 		status, scriptError, repliesJSON, db.now(), id)
 	return err
@@ -75,7 +75,7 @@ func (db *DB) ListWebhookLogs(botID, channelID string, limit int) ([]store.Webho
 			&l.CreatedAt, &l.UpdatedAt); err != nil {
 			return nil, err
 		}
-		l.Replies = json.RawMessage(repliesStr)
+		l.Replies = jsonx.RawMessage(repliesStr)
 		logs = append(logs, l)
 	}
 	return logs, rows.Err()

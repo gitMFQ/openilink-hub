@@ -2,12 +2,12 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"net/url"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -44,7 +44,7 @@ func (s *Server) oidcProviders() map[string]*OIDCProviderConfig {
 			continue
 		}
 		var cfg OIDCProviderConfig
-		if err := json.Unmarshal([]byte(val), &cfg); err != nil {
+		if err := jsonx.Unmarshal([]byte(val), &cfg); err != nil {
 			continue
 		}
 		if cfg.ClientID == "" || cfg.IssuerURL == "" {
@@ -155,7 +155,7 @@ func (s *Server) oidcExchangeAndIdentify(ctx context.Context, cfg *OIDCProviderC
 			return "", "", "", "", fmt.Errorf("userinfo endpoint returned %d", resp.StatusCode)
 		}
 		var claims map[string]any
-		if err := json.NewDecoder(resp.Body).Decode(&claims); err != nil {
+		if err := jsonx.NewDecoder(resp.Body).Decode(&claims); err != nil {
 			return "", "", "", "", fmt.Errorf("userinfo decode failed: %w", err)
 		}
 		subVal, _ := claims["sub"]
@@ -297,7 +297,7 @@ func (s *Server) handleGetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	for _, cfg := range providers {
 		sorted = append(sorted, cfg)
 	}
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Slug < sorted[j].Slug })
+	slices.SortFunc(sorted, func(a, b *OIDCProviderConfig) int { return strings.Compare(a.Slug, b.Slug) })
 
 	result := make([]map[string]any, 0, len(sorted))
 	for _, cfg := range sorted {
@@ -314,7 +314,7 @@ func (s *Server) handleGetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // PUT /api/admin/config/oidc/{slug} — create or update an OIDC provider
@@ -336,7 +336,7 @@ func (s *Server) handleSetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 		ClientSecret string `json:"client_secret"`
 		Scopes       string `json:"scopes"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -356,7 +356,7 @@ func (s *Server) handleSetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	existingRaw, _ := s.Store.GetConfig("oidc." + slug + ".config")
 	if existingRaw != "" {
 		var existing OIDCProviderConfig
-		if json.Unmarshal([]byte(existingRaw), &existing) == nil {
+		if jsonx.Unmarshal([]byte(existingRaw), &existing) == nil {
 			// Prevent issuer change — sub is only unique within an issuer,
 			// so changing it would break existing user identity links.
 			if existing.IssuerURL != "" && existing.IssuerURL != req.IssuerURL {
@@ -390,7 +390,7 @@ func (s *Server) handleSetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 		UserInfoURL:  userinfoURL,
 	}
 
-	data, err := json.Marshal(cfg)
+	data, err := jsonx.Marshal(cfg)
 	if err != nil {
 		jsonError(w, "internal error", http.StatusInternalServerError)
 		return

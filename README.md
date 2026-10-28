@@ -19,7 +19,7 @@
 多 Bot 管理 · 20+ App · 平台互通 · 效率工具 · 生活助手 · AI Tools · 7 种语言 SDK · Passkey 登录
 
 [![License](https://img.shields.io/github/license/openilink/openilink-hub?style=flat-square)](LICENSE)
-[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
+[![Go](https://img.shields.io/badge/Go-1.27-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![Docker](https://img.shields.io/docker/pulls/openilink/openilink-hub?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/openilink/openilink-hub)
 [![GitHub Stars](https://img.shields.io/github/stars/openilink/openilink-hub?style=flat-square&logo=github)](https://github.com/openilink/openilink-hub/stargazers)
@@ -434,7 +434,7 @@ go build -o oih .
 
 | 层 | 技术 |
 |----|------|
-| 后端 | Go 1.25, SQLite / PostgreSQL 17, gorilla/websocket |
+| 后端 | Go 1.27, SQLite / PostgreSQL 17, gorilla/websocket |
 | 前端 | React 19, Vite, TypeScript, Tailwind CSS |
 | 认证 | WebAuthn (Passkey), OAuth 2.0 (PKCE), 密码 |
 | App 系统 | PKCE OAuth 安装, WebSocket/Webhook 事件投递 |

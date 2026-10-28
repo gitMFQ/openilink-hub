@@ -2,7 +2,7 @@ package auth
 
 import (
 	"encoding/base64"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"sync"
 	"time"
 
@@ -65,7 +65,7 @@ func LoadWebAuthnUser(s store.CredentialStore, user *store.User) (*WebAuthnUser,
 	var creds []webauthn.Credential
 	for _, dc := range dbCreds {
 		var transports []protocol.AuthenticatorTransport
-		_ = json.Unmarshal([]byte(dc.Transport), &transports)
+		_ = jsonx.Unmarshal([]byte(dc.Transport), &transports)
 
 		credID, _ := base64.RawURLEncoding.DecodeString(dc.ID)
 		if len(credID) == 0 {

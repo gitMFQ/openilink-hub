@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -201,7 +201,7 @@ func (s *Server) mcpSendMessage(ctx context.Context, req mcp.CallToolRequest) (*
 
 	// Store media to ObjectStore if available
 	mediaStatus := ""
-	mediaKeys := json.RawMessage(`{}`)
+	mediaKeys := jsonx.RawMessage(`{}`)
 	mediaKey := ""
 	if len(outMsg.Data) > 0 && s.ObjectStore != nil {
 		ct := detectContentType(itemType)
@@ -213,7 +213,7 @@ func (s *Server) mcpSendMessage(ctx context.Context, req mcp.CallToolRequest) (*
 			now.Format("2006/01/02"), now.UnixMilli(), rnd, ext)
 		if _, err := s.ObjectStore.Put(ctx, key, ct, outMsg.Data); err == nil {
 			mediaStatus = "ready"
-			mediaKeys, _ = json.Marshal(map[string]string{"0": key})
+			mediaKeys, _ = jsonx.Marshal(map[string]string{"0": key})
 			mediaKey = key
 		} else {
 			slog.Warn("mcp: objectstore put failed", "key", key, "err", err)
@@ -228,7 +228,7 @@ func (s *Server) mcpSendMessage(ctx context.Context, req mcp.CallToolRequest) (*
 	if outMsg.FileName != "" {
 		item["file_name"] = outMsg.FileName
 	}
-	itemList, err := json.Marshal([]any{item})
+	itemList, err := jsonx.Marshal([]any{item})
 	if err != nil {
 		slog.Warn("mcp: failed to marshal message item", "err", err)
 	}
@@ -281,7 +281,7 @@ func (s *Server) mcpListContacts(ctx context.Context, req mcp.CallToolRequest) (
 		return mcp.NewToolResultError("failed to list contacts"), nil
 	}
 
-	data, err := json.Marshal(contacts)
+	data, err := jsonx.Marshal(contacts)
 	if err != nil {
 		return mcp.NewToolResultError("failed to serialize contacts"), nil
 	}
@@ -317,7 +317,7 @@ func (s *Server) mcpGetBotInfo(ctx context.Context, req mcp.CallToolRequest) (*m
 		"msg_count":  bot.MsgCount,
 		"created_at": bot.CreatedAt,
 	}
-	data, err := json.Marshal(info)
+	data, err := jsonx.Marshal(info)
 	if err != nil {
 		return mcp.NewToolResultError("failed to serialize bot info"), nil
 	}

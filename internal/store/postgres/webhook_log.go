@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/openilink/openilink-hub/internal/store"
 )
@@ -29,7 +29,7 @@ func (db *DB) UpdateWebhookLogResponse(id int64, status string, respStatus int, 
 }
 
 func (db *DB) UpdateWebhookLogResult(id int64, status, scriptError string, replies []string) error {
-	repliesJSON, _ := json.Marshal(replies)
+	repliesJSON, _ := jsonx.Marshal(replies)
 	_, err := db.Exec(`UPDATE webhook_logs SET status=$1, script_error=$2, replies=$3, updated_at=$4 WHERE id=$5`,
 		status, scriptError, repliesJSON, db.now(), id)
 	return err

@@ -2,14 +2,14 @@ package api
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 
 	"github.com/openilink/openilink-hub/internal/auth"
-	"github.com/openilink/openilink-hub/internal/store"
 	"github.com/openilink/openilink-hub/internal/provider"
 	ilinkProvider "github.com/openilink/openilink-hub/internal/provider/ilink"
+	"github.com/openilink/openilink-hub/internal/store"
 )
 
 // --- iLink scan login ---
@@ -25,7 +25,7 @@ func (s *Server) handleScanLoginStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	jsonx.NewEncoder(w).Encode(map[string]string{
 		"session_id": sessionID,
 		"qr_url":     qrURL,
 	})
@@ -61,14 +61,14 @@ func (s *Server) handleScanLoginStatus(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	sendEvent := func(event, data string) {
-		var parsed json.RawMessage
-		if err := json.Unmarshal([]byte(data), &parsed); err != nil {
-			parsed, _ = json.Marshal(data)
+		var parsed jsonx.RawMessage
+		if err := jsonx.Unmarshal([]byte(data), &parsed); err != nil {
+			parsed, _ = jsonx.Marshal(data)
 		}
 		msg := map[string]any{"event": event}
 		// Merge parsed data fields into the message
 		var fields map[string]any
-		if json.Unmarshal(parsed, &fields) == nil {
+		if jsonx.Unmarshal(parsed, &fields) == nil {
 			for k, v := range fields {
 				msg[k] = v
 			}
@@ -95,7 +95,7 @@ func (s *Server) handleScanLoginStatus(w http.ResponseWriter, r *http.Request) {
 		case "scanned":
 			sendEvent("status", `{"status":"scanned"}`)
 		case "expired":
-			j, _ := json.Marshal(map[string]string{"status": "refreshed", "qr_url": result.QRURL})
+			j, _ := jsonx.Marshal(map[string]string{"status": "refreshed", "qr_url": result.QRURL})
 			sendEvent("status", string(j))
 		case "confirmed":
 			s.completeScanLogin(result, sendEvent)
@@ -116,7 +116,7 @@ func (s *Server) completeScanLogin(result *provider.BindPollResult, sendEvent fu
 		BotID       string `json:"bot_id"`
 		ILinkUserID string `json:"ilink_user_id"`
 	}
-	json.Unmarshal(result.Credentials, &creds)
+	jsonx.Unmarshal(result.Credentials, &creds)
 
 	if creds.ILinkUserID == "" {
 		sendEvent("error", `{"message":"no user id from provider"}`)
@@ -213,6 +213,6 @@ func (s *Server) completeScanLogin(result *provider.BindPollResult, sendEvent fu
 	sessionToken, _ := auth.CreateSession(s.Store, user.ID)
 
 	resp := map[string]any{"status": "connected", "bot_id": bot.ID, "session_token": sessionToken, "is_new": isNew}
-	j, _ := json.Marshal(resp)
+	j, _ := jsonx.Marshal(resp)
 	sendEvent("status", string(j))
 }

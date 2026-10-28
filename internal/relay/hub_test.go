@@ -1,7 +1,7 @@
 package relay
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"sync"
 	"testing"
 	"time"
@@ -21,7 +21,7 @@ func readEnvelope(c *Conn, timeout time.Duration) (*Envelope, bool) {
 	select {
 	case data := <-c.send:
 		var env Envelope
-		json.Unmarshal(data, &env)
+		jsonx.Unmarshal(data, &env)
 		return &env, true
 	case <-time.After(timeout):
 		return nil, false

@@ -1,25 +1,25 @@
 package store
 
-import "encoding/json"
+import "github.com/openilink/openilink-hub/internal/jsonx"
 
 type WebhookLog struct {
-	ID             int64           `json:"id"`
-	BotID          string          `json:"bot_id"`
-	ChannelID      string          `json:"channel_id"`
-	MessageID      *int64          `json:"message_id,omitempty"`
-	PluginID       string          `json:"plugin_id,omitempty"`
-	PluginVersion  string          `json:"plugin_version,omitempty"`
-	Status         string          `json:"status"`
-	RequestURL     string          `json:"request_url,omitempty"`
-	RequestMethod  string          `json:"request_method,omitempty"`
-	RequestBody    string          `json:"request_body,omitempty"`
-	ResponseStatus int             `json:"response_status,omitempty"`
-	ResponseBody   string          `json:"response_body,omitempty"`
-	ScriptError    string          `json:"script_error,omitempty"`
-	Replies        json.RawMessage `json:"replies"`
-	DurationMs     int             `json:"duration_ms"`
-	CreatedAt      int64           `json:"created_at"`
-	UpdatedAt      int64           `json:"updated_at"`
+	ID             int64            `json:"id"`
+	BotID          string           `json:"bot_id"`
+	ChannelID      string           `json:"channel_id"`
+	MessageID      *int64           `json:"message_id,omitempty"`
+	PluginID       string           `json:"plugin_id,omitempty"`
+	PluginVersion  string           `json:"plugin_version,omitempty"`
+	Status         string           `json:"status"`
+	RequestURL     string           `json:"request_url,omitempty"`
+	RequestMethod  string           `json:"request_method,omitempty"`
+	RequestBody    string           `json:"request_body,omitempty"`
+	ResponseStatus int              `json:"response_status,omitempty"`
+	ResponseBody   string           `json:"response_body,omitempty"`
+	ScriptError    string           `json:"script_error,omitempty"`
+	Replies        jsonx.RawMessage `json:"replies"`
+	DurationMs     int              `json:"duration_ms"`
+	CreatedAt      int64            `json:"created_at"`
+	UpdatedAt      int64            `json:"updated_at"`
 }
 
 type WebhookLogStore interface {

@@ -1,8 +1,8 @@
 package sqlite
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/google/uuid"
 	"github.com/openilink/openilink-hub/internal/store"
@@ -17,7 +17,7 @@ func scanPluginWithLatest(scanner interface{ Scan(...any) error }) (store.Plugin
 	if err != nil {
 		return pw, err
 	}
-	pw.ConfigSchema = json.RawMessage(configSchemaStr)
+	pw.ConfigSchema = jsonx.RawMessage(configSchemaStr)
 	return pw, nil
 }
 

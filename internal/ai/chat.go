@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"net/http"
 	"strconv"
@@ -44,10 +44,10 @@ const MaxToolRounds = 5
 // Message supports text, tool_calls, and tool results.
 type Message struct {
 	Role       string     `json:"role"`
-	Content    any        `json:"content,omitempty"`     // string or null
-	ToolCalls  []toolCall `json:"tool_calls,omitempty"`  // assistant response
+	Content    any        `json:"content,omitempty"`      // string or null
+	ToolCalls  []toolCall `json:"tool_calls,omitempty"`   // assistant response
 	ToolCallID string     `json:"tool_call_id,omitempty"` // tool result
-	Name       string     `json:"name,omitempty"`        // tool result function name
+	Name       string     `json:"name,omitempty"`         // tool result function name
 }
 
 type toolCall struct {
@@ -68,15 +68,15 @@ type Tool struct {
 }
 
 type ToolFunction struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Parameters  json.RawMessage `json:"parameters,omitempty"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Parameters  jsonx.RawMessage `json:"parameters,omitempty"`
 }
 
 type chatRequest struct {
-	Model    string        `json:"model"`
+	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
-	Tools    []Tool        `json:"tools,omitempty"`
+	Tools    []Tool    `json:"tools,omitempty"`
 }
 
 type chatUsage struct {
@@ -114,9 +114,9 @@ type chatResponseMessage struct {
 
 // ToolCallRequest is returned when the LLM wants to call a tool.
 type ToolCallRequest struct {
-	ID        string          // tool_call ID for correlation
-	Name      string          // function name
-	Arguments json.RawMessage // parsed arguments
+	ID        string           // tool_call ID for correlation
+	Name      string           // function name
+	Arguments jsonx.RawMessage // parsed arguments
 }
 
 // ToolCallResult is the result of executing a tool call.
@@ -271,7 +271,7 @@ func callAPI(ctx context.Context, baseURL, apiKey, model string, messages []Mess
 		req.Tools = tools
 	}
 
-	reqBody, _ := json.Marshal(req)
+	reqBody, _ := jsonx.Marshal(req)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
@@ -297,7 +297,7 @@ func callAPI(ctx context.Context, baseURL, apiKey, model string, messages []Mess
 	}
 
 	var result chatResponse
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := jsonx.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("ai response parse failed: %s", truncate(string(body), 1000))
 	}
 
@@ -341,7 +341,7 @@ func callAPI(ctx context.Context, baseURL, apiKey, model string, messages []Mess
 			calls = append(calls, ToolCallRequest{
 				ID:        tc.ID,
 				Name:      tc.Function.Name,
-				Arguments: json.RawMessage(tc.Function.Arguments),
+				Arguments: jsonx.RawMessage(tc.Function.Arguments),
 			})
 		}
 		return &CompletionResult{Thinking: thinking, ToolCalls: calls, Usage: usage}, nil
@@ -357,10 +357,10 @@ func callAPI(ctx context.Context, baseURL, apiKey, model string, messages []Mess
 
 // reservedHeaders are HTTP headers that must not be overridden by custom config.
 var reservedHeaders = map[string]bool{
-	"authorization":    true,
-	"content-type":     true,
-	"content-length":   true,
-	"host":             true,
+	"authorization":     true,
+	"content-type":      true,
+	"content-length":    true,
+	"host":              true,
 	"transfer-encoding": true,
 }
 
@@ -375,12 +375,12 @@ func truncate(s string, max int) string {
 	return s[:max] + "..."
 }
 
-func extractTextFromItems(itemList json.RawMessage) string {
+func extractTextFromItems(itemList jsonx.RawMessage) string {
 	var items []struct {
 		Type string `json:"type"`
 		Text string `json:"text,omitempty"`
 	}
-	json.Unmarshal(itemList, &items)
+	jsonx.Unmarshal(itemList, &items)
 	for _, item := range items {
 		if item.Text != "" {
 			return item.Text
@@ -391,16 +391,16 @@ func extractTextFromItems(itemList json.RawMessage) string {
 
 // buildHistoryContent builds content for a history message.
 // Returns a string for text-only, []contentPart for multimodal, or nil if empty.
-func buildHistoryContent(ctx context.Context, itemList, mediaKeys json.RawMessage, resolver MediaResolver) any {
+func buildHistoryContent(ctx context.Context, itemList, mediaKeys jsonx.RawMessage, resolver MediaResolver) any {
 	var items []struct {
 		Type string `json:"type"`
 		Text string `json:"text,omitempty"`
 	}
-	json.Unmarshal(itemList, &items)
+	jsonx.Unmarshal(itemList, &items)
 
 	var keys map[string]string
 	if len(mediaKeys) > 2 {
-		json.Unmarshal(mediaKeys, &keys)
+		jsonx.Unmarshal(mediaKeys, &keys)
 	}
 
 	var text string

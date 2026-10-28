@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"strings"
 	"time"
@@ -41,7 +41,7 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	hasOAuth := len(oauthAccounts) > 0
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(struct {
+	jsonx.NewEncoder(w).Encode(struct {
 		*store.User
 		HasPassword bool `json:"has_password"`
 		HasPasskey  bool `json:"has_passkey"`
@@ -60,7 +60,7 @@ func (s *Server) handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 		DisplayName string `json:"display_name"`
 		Email       string `json:"email"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -76,7 +76,7 @@ func (s *Server) handleUpdateUsername(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Username string `json:"username"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -115,7 +115,7 @@ func setSessionCookie(w http.ResponseWriter, token string) {
 func jsonError(w http.ResponseWriter, msg string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	jsonx.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
 
 func jsonOK(w http.ResponseWriter) {

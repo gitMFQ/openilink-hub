@@ -1,7 +1,7 @@
 package github
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/openilink/openilink-hub/internal/builtin"
 )
@@ -64,7 +64,7 @@ curl -X POST "{hub_url}/api/hooks/github?token={your_token}" \
 | star / fork | ⭐/🍴 Star / Fork |`,
 		Scopes: []string{"message:write"},
 		Events: []string{},
-		ConfigSchema: json.RawMessage(`{
+		ConfigSchema: jsonx.RawMessage(`{
 			"type": "object",
 			"properties": {
 				"secret": {

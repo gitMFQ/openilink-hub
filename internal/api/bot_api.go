@@ -5,8 +5,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net"
@@ -50,7 +50,7 @@ func (s *Server) handleBotAPISend(w http.ResponseWriter, r *http.Request) {
 		FileName string `json:"filename"`
 		TraceID  string `json:"trace_id"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		botAPIError(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -161,7 +161,7 @@ func (s *Server) handleBotAPISend(w http.ResponseWriter, r *http.Request) {
 
 	// Store media to ObjectStore if available
 	mediaStatus := ""
-	mediaKeys := json.RawMessage(`{}`)
+	mediaKeys := jsonx.RawMessage(`{}`)
 	mediaKey := ""
 	if len(outMsg.Data) > 0 && s.ObjectStore != nil {
 		ct := detectContentType(itemType)
@@ -173,7 +173,7 @@ func (s *Server) handleBotAPISend(w http.ResponseWriter, r *http.Request) {
 			now.Format("2006/01/02"), now.UnixMilli(), rnd, ext)
 		if _, err := s.ObjectStore.Put(r.Context(), key, ct, outMsg.Data); err == nil {
 			mediaStatus = "ready"
-			mediaKeys, _ = json.Marshal(map[string]string{"0": key})
+			mediaKeys, _ = jsonx.Marshal(map[string]string{"0": key})
 			mediaKey = key
 		} else {
 			slog.Warn("bot api: objectstore put failed", "key", key, "err", err)
@@ -188,7 +188,7 @@ func (s *Server) handleBotAPISend(w http.ResponseWriter, r *http.Request) {
 	if outMsg.FileName != "" {
 		item["file_name"] = outMsg.FileName
 	}
-	itemList, _ := json.Marshal([]any{item})
+	itemList, _ := jsonx.Marshal([]any{item})
 	s.Store.SaveMessage(&store.Message{
 		BotID:       inst.BotID,
 		Direction:   "outbound",
@@ -219,7 +219,7 @@ func (s *Server) handleBotAPISend(w http.ResponseWriter, r *http.Request) {
 
 	// Respond
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"ok":        true,
 		"client_id": clientID,
 		"trace_id":  traceID,
@@ -248,7 +248,7 @@ func (s *Server) handleBotAPIContacts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"ok":       true,
 		"contacts": contacts,
 	})
@@ -283,7 +283,7 @@ func (s *Server) handleBotAPIBotInfo(w http.ResponseWriter, r *http.Request) {
 
 	// Build response — exclude sensitive fields like credentials
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"ok": true,
 		"bot": map[string]any{
 			"id":         bot.ID,
@@ -401,16 +401,16 @@ func (s *Server) handleBotAPIUpdateTools(w http.ResponseWriter, r *http.Request)
 	}
 
 	var req struct {
-		Tools json.RawMessage `json:"tools"`
+		Tools jsonx.RawMessage `json:"tools"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Tools == nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Tools == nil {
 		botAPIError(w, "tools required", http.StatusBadRequest)
 		return
 	}
 
 	// Validate tools is a JSON array
 	var toolsCheck []any
-	if err := json.Unmarshal(req.Tools, &toolsCheck); err != nil {
+	if err := jsonx.Unmarshal(req.Tools, &toolsCheck); err != nil {
 		botAPIError(w, "tools must be a JSON array", http.StatusBadRequest)
 		return
 	}
@@ -436,7 +436,7 @@ func (s *Server) handleBotAPIUpdateTools(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "tool_count": len(toolsCheck), "scope": scope})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "tool_count": len(toolsCheck), "scope": scope})
 }
 
 // handleBotAPIUpdateInstallationTools handles PUT /bot/v1/installation/tools.
@@ -454,15 +454,15 @@ func (s *Server) handleBotAPIUpdateInstallationTools(w http.ResponseWriter, r *h
 	}
 
 	var req struct {
-		Tools json.RawMessage `json:"tools"`
+		Tools jsonx.RawMessage `json:"tools"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Tools == nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Tools == nil {
 		botAPIError(w, "tools required", http.StatusBadRequest)
 		return
 	}
 
 	var toolsCheck []any
-	if err := json.Unmarshal(req.Tools, &toolsCheck); err != nil {
+	if err := jsonx.Unmarshal(req.Tools, &toolsCheck); err != nil {
 		botAPIError(w, "tools must be a JSON array", http.StatusBadRequest)
 		return
 	}
@@ -475,7 +475,7 @@ func (s *Server) handleBotAPIUpdateInstallationTools(w http.ResponseWriter, r *h
 	slog.Info("installation tools updated", "inst_id", inst.ID, "tool_count", len(toolsCheck))
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "tool_count": len(toolsCheck)})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "tool_count": len(toolsCheck)})
 }
 
 // isPrivateIP returns true if the IP is loopback, private, link-local,

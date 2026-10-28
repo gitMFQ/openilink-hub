@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/openilink/openilink-hub/internal/auth"
@@ -61,26 +61,26 @@ func buildListingSnapshot(app *store.App) string {
 		"config_schema": app.ConfigSchema,
 		"version":       app.Version,
 	}
-	b, _ := json.Marshal(snap)
+	b, _ := jsonx.Marshal(snap)
 	return string(b)
 }
 
-func normalizeJSON(raw json.RawMessage) json.RawMessage {
+func normalizeJSON(raw jsonx.RawMessage) jsonx.RawMessage {
 	if len(bytes.TrimSpace(raw)) == 0 {
 		return nil
 	}
 	var v any
-	if err := json.Unmarshal(raw, &v); err != nil {
+	if err := jsonx.Unmarshal(raw, &v); err != nil {
 		return bytes.TrimSpace(raw)
 	}
-	normalized, err := json.Marshal(normalizeJSONValue(v))
+	normalized, err := jsonx.Marshal(normalizeJSONValue(v))
 	if err != nil {
 		return bytes.TrimSpace(raw)
 	}
 	return normalized
 }
 
-func jsonRawEqual(a, b json.RawMessage) bool {
+func jsonRawEqual(a, b jsonx.RawMessage) bool {
 	return bytes.Equal(normalizeJSON(a), normalizeJSON(b))
 }
 
@@ -118,7 +118,7 @@ func normalizeStringSet(items []any) ([]string, bool) {
 		}
 		values = append(values, s)
 	}
-	sort.Strings(values)
+	slices.Sort(values)
 	out := values[:0]
 	for _, value := range values {
 		if len(out) > 0 && out[len(out)-1] == value {
@@ -129,27 +129,27 @@ func normalizeStringSet(items []any) ([]string, bool) {
 	return out, true
 }
 
-func normalizeCollectionJSON(raw json.RawMessage) json.RawMessage {
+func normalizeCollectionJSON(raw jsonx.RawMessage) jsonx.RawMessage {
 	trimmed := bytes.TrimSpace(raw)
 	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
 		return []byte("[]")
 	}
 
 	var v any
-	if err := json.Unmarshal(trimmed, &v); err != nil {
+	if err := jsonx.Unmarshal(trimmed, &v); err != nil {
 		return trimmed
 	}
 	if v == nil {
 		return []byte("[]")
 	}
-	normalized, err := json.Marshal(normalizeJSONValue(v))
+	normalized, err := jsonx.Marshal(normalizeJSONValue(v))
 	if err != nil {
 		return trimmed
 	}
 	return normalized
 }
 
-func jsonCollectionEqual(a, b json.RawMessage) bool {
+func jsonCollectionEqual(a, b jsonx.RawMessage) bool {
 	return bytes.Equal(normalizeCollectionJSON(a), normalizeCollectionJSON(b))
 }
 
@@ -166,23 +166,23 @@ func (s *Server) handleCreateApp(w http.ResponseWriter, r *http.Request) {
 	userID := auth.UserIDFromContext(r.Context())
 
 	var req struct {
-		Name             string          `json:"name"`
-		Slug             string          `json:"slug"`
-		Description      string          `json:"description"`
-		Icon             string          `json:"icon"`
-		IconURL          string          `json:"icon_url"`
-		Homepage         string          `json:"homepage"`
-		OAuthSetupURL    string          `json:"oauth_setup_url"`
-		OAuthRedirectURL string          `json:"oauth_redirect_url"`
-		Tools            json.RawMessage `json:"tools"`
-		Events           json.RawMessage `json:"events"`
-		Scopes           json.RawMessage `json:"scopes"`
-		Version          string          `json:"version"`
-		Readme           string          `json:"readme"`
-		Guide            string          `json:"guide"`
-		ConfigSchema     string          `json:"config_schema"`
+		Name             string           `json:"name"`
+		Slug             string           `json:"slug"`
+		Description      string           `json:"description"`
+		Icon             string           `json:"icon"`
+		IconURL          string           `json:"icon_url"`
+		Homepage         string           `json:"homepage"`
+		OAuthSetupURL    string           `json:"oauth_setup_url"`
+		OAuthRedirectURL string           `json:"oauth_redirect_url"`
+		Tools            jsonx.RawMessage `json:"tools"`
+		Events           jsonx.RawMessage `json:"events"`
+		Scopes           jsonx.RawMessage `json:"scopes"`
+		Version          string           `json:"version"`
+		Readme           string           `json:"readme"`
+		Guide            string           `json:"guide"`
+		ConfigSchema     string           `json:"config_schema"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -240,7 +240,7 @@ func (s *Server) handleCreateApp(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(app)
+	jsonx.NewEncoder(w).Encode(app)
 }
 
 // GET /api/apps?listing=listed — public marketplace; otherwise my apps
@@ -279,7 +279,7 @@ func (s *Server) handleListApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // GET /api/apps/{id}
@@ -300,7 +300,7 @@ func (s *Server) handleGetApp(w http.ResponseWriter, r *http.Request) {
 		}
 		// Secret is already hidden via json:"-" on store.App
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(app)
+		jsonx.NewEncoder(w).Encode(app)
 		return
 	}
 
@@ -310,7 +310,7 @@ func (s *Server) handleGetApp(w http.ResponseWriter, r *http.Request) {
 		WebhookSecret string `json:"webhook_secret,omitempty"`
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(appWithSecret{App: app, WebhookSecret: app.WebhookSecret})
+	jsonx.NewEncoder(w).Encode(appWithSecret{App: app, WebhookSecret: app.WebhookSecret})
 }
 
 // PUT /api/apps/{id}
@@ -335,23 +335,23 @@ func (s *Server) handleUpdateApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Name             *string         `json:"name"`
-		Description      *string         `json:"description"`
-		Icon             *string         `json:"icon"`
-		IconURL          *string         `json:"icon_url"`
-		Homepage         *string         `json:"homepage"`
-		OAuthSetupURL    *string         `json:"oauth_setup_url"`
-		OAuthRedirectURL *string         `json:"oauth_redirect_url"`
-		WebhookURL       *string         `json:"webhook_url"`
-		Tools            json.RawMessage `json:"tools"`
-		Events           json.RawMessage `json:"events"`
-		Scopes           json.RawMessage `json:"scopes"`
-		ConfigSchema     *string         `json:"config_schema"`
-		Version          *string         `json:"version"`
-		Readme           *string         `json:"readme"`
-		Guide            *string         `json:"guide"`
+		Name             *string          `json:"name"`
+		Description      *string          `json:"description"`
+		Icon             *string          `json:"icon"`
+		IconURL          *string          `json:"icon_url"`
+		Homepage         *string          `json:"homepage"`
+		OAuthSetupURL    *string          `json:"oauth_setup_url"`
+		OAuthRedirectURL *string          `json:"oauth_redirect_url"`
+		WebhookURL       *string          `json:"webhook_url"`
+		Tools            jsonx.RawMessage `json:"tools"`
+		Events           jsonx.RawMessage `json:"events"`
+		Scopes           jsonx.RawMessage `json:"scopes"`
+		ConfigSchema     *string          `json:"config_schema"`
+		Version          *string          `json:"version"`
+		Readme           *string          `json:"readme"`
+		Guide            *string          `json:"guide"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -447,7 +447,7 @@ func (s *Server) handleUpdateApp(w http.ResponseWriter, r *http.Request) {
 	if req.Scopes != nil && !jsonCollectionEqual(req.Scopes, app.Scopes) {
 		coreChanged = true
 	}
-	if req.ConfigSchema != nil && !jsonRawEqual(json.RawMessage(*req.ConfigSchema), json.RawMessage(app.ConfigSchema)) {
+	if req.ConfigSchema != nil && !jsonRawEqual(jsonx.RawMessage(*req.ConfigSchema), jsonx.RawMessage(app.ConfigSchema)) {
 		coreChanged = true
 	}
 	if req.Version != nil && *req.Version != app.Version {
@@ -621,7 +621,7 @@ func (s *Server) handleReviewListing(w http.ResponseWriter, r *http.Request) {
 		Approve bool   `json:"approve"`
 		Reason  string `json:"reason"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -675,7 +675,7 @@ func (s *Server) handleAdminListApps(w http.ResponseWriter, r *http.Request) {
 		apps = []store.App{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(apps)
+	jsonx.NewEncoder(w).Encode(apps)
 }
 
 // userHasInstallation checks if the user owns any bot that has this app installed.
@@ -741,7 +741,7 @@ func (s *Server) handleAdminSetListing(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Listing string `json:"listing"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -805,7 +805,7 @@ func (s *Server) handleListAppReviews(w http.ResponseWriter, r *http.Request) {
 		reviews = []store.AppReview{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(reviews)
+	jsonx.NewEncoder(w).Encode(reviews)
 }
 
 // requireInstallation loads an installation by path IID and verifies it belongs to the app

@@ -3,7 +3,7 @@ package store
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"sync"
 	"time"
 )
@@ -135,8 +135,8 @@ func (t *Tracer) Flush() {
 		if sb.endTime == 0 {
 			sb.endTime = time.Now().UnixMilli()
 		}
-		attrsJSON, _ := json.Marshal(sb.attributes)
-		eventsJSON, _ := json.Marshal(sb.events)
+		attrsJSON, _ := jsonx.Marshal(sb.attributes)
+		eventsJSON, _ := jsonx.Marshal(sb.events)
 		_ = t.ts.InsertSpan(t.traceID, sb.spanID, sb.parentSpanID, sb.name, sb.kind,
 			sb.statusCode, sb.statusMessage, sb.startTime, sb.endTime,
 			attrsJSON, eventsJSON, t.botID)

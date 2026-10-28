@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 
 	"github.com/openilink/openilink-hub/internal/auth"
@@ -17,7 +17,7 @@ func (s *Server) handlePasswordRegister(w http.ResponseWriter, r *http.Request) 
 		Email       string `json:"email"`
 		DisplayName string `json:"display_name"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -68,7 +68,7 @@ func (s *Server) handlePasswordRegister(w http.ResponseWriter, r *http.Request) 
 	setSessionCookie(w, token)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "user": user})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "user": user})
 }
 
 func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" || req.Password == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" || req.Password == "" {
 		jsonError(w, "username and password required", http.StatusBadRequest)
 		return
 	}
@@ -99,7 +99,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 	setSessionCookie(w, token)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "user": user})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "user": user})
 }
 
 func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +108,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		OldPassword string `json:"old_password"`
 		NewPassword string `json:"new_password"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.NewPassword == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.NewPassword == "" {
 		jsonError(w, "new_password required", http.StatusBadRequest)
 		return
 	}

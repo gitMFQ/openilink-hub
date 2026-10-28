@@ -3,8 +3,8 @@ package sqlite
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/google/uuid"
 	"github.com/openilink/openilink-hub/internal/store"
@@ -19,13 +19,13 @@ func generateToken(n int) string {
 func (db *DB) CreateApp(app *store.App) (*store.App, error) {
 	app.ID = uuid.New().String()
 	if app.Tools == nil {
-		app.Tools = json.RawMessage("[]")
+		app.Tools = jsonx.RawMessage("[]")
 	}
 	if app.Events == nil {
-		app.Events = json.RawMessage("[]")
+		app.Events = jsonx.RawMessage("[]")
 	}
 	if app.Scopes == nil {
-		app.Scopes = json.RawMessage("[]")
+		app.Scopes = jsonx.RawMessage("[]")
 	}
 	if app.WebhookSecret == "" {
 		app.WebhookSecret = generateToken(32)
@@ -218,7 +218,7 @@ func (db *DB) ListMarketplaceApps() ([]store.App, error) {
 	return apps, rows.Err()
 }
 
-func (db *DB) UpdateApp(id string, name, description, icon, iconURL, homepage, oauthSetupURL, oauthRedirectURL, configSchema, version, readme, guide string, tools, events, scopes json.RawMessage) error {
+func (db *DB) UpdateApp(id string, name, description, icon, iconURL, homepage, oauthSetupURL, oauthRedirectURL, configSchema, version, readme, guide string, tools, events, scopes jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE apps SET name=?, description=?, icon=?, icon_url=?, homepage=?,
 		tools=?, events=?, scopes=?, oauth_setup_url=?, oauth_redirect_url=?, config_schema=?,
 		version=?, readme=?, guide=?, updated_at=? WHERE id=?`,
@@ -267,7 +267,7 @@ func (db *DB) UpdateAppWithTransition(id string, update store.AppUpdate, nextLis
 	return result, nil
 }
 
-func (db *DB) UpdateMarketplaceApp(id, name, description, iconURL, homepage, webhookURL, oauthSetupURL, oauthRedirectURL, version, readme, guide string, tools, events, scopes json.RawMessage) error {
+func (db *DB) UpdateMarketplaceApp(id, name, description, iconURL, homepage, webhookURL, oauthSetupURL, oauthRedirectURL, version, readme, guide string, tools, events, scopes jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE apps SET name=?, description=?, icon_url=?, homepage=?,
 		webhook_url=?, oauth_setup_url=?, oauth_redirect_url=?, version=?, readme=?, guide=?,
 		tools=?, events=?, scopes=?, updated_at=? WHERE id=?`,
@@ -286,11 +286,11 @@ func (db *DB) InstallApp(appID, botID string) (*store.AppInstallation, error) {
 		AppID:    appID,
 		BotID:    botID,
 		AppToken: "app_" + generateToken(32),
-		Config:   json.RawMessage("{}"),
-		Scopes:   json.RawMessage("[]"),
+		Config:   jsonx.RawMessage("{}"),
+		Scopes:   jsonx.RawMessage("[]"),
 		Enabled:  true,
 	}
-	inst.Tools = json.RawMessage("[]")
+	inst.Tools = jsonx.RawMessage("[]")
 	_, err := db.Exec(`INSERT INTO app_installations (id, app_id, bot_id, app_token, config, scopes, tools)
 		VALUES (?,?,?,?,?,?,?)`,
 		inst.ID, inst.AppID, inst.BotID, inst.AppToken, inst.Config, inst.Scopes, inst.Tools,
@@ -402,7 +402,7 @@ func (db *DB) listInstallations(where string, arg any) ([]store.AppInstallation,
 	return list, rows.Err()
 }
 
-func (db *DB) UpdateInstallation(id, handle string, config json.RawMessage, scopes json.RawMessage, enabled bool) error {
+func (db *DB) UpdateInstallation(id, handle string, config jsonx.RawMessage, scopes jsonx.RawMessage, enabled bool) error {
 	_, err := db.Exec(`UPDATE app_installations SET handle=?, config=?, scopes=?, enabled=?, updated_at=? WHERE id=?`,
 		handle, config, scopes, enabled, db.now(), id)
 	return err
@@ -538,12 +538,12 @@ func (db *DB) SetListing(id, listing string) error {
 	return err
 }
 
-func (db *DB) UpdateAppTools(id string, tools json.RawMessage) error {
+func (db *DB) UpdateAppTools(id string, tools jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE apps SET tools = ?, updated_at = ? WHERE id = ?`, tools, db.now(), id)
 	return err
 }
 
-func (db *DB) UpdateInstallationTools(id string, tools json.RawMessage) error {
+func (db *DB) UpdateInstallationTools(id string, tools jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE app_installations SET tools = ?, updated_at = ? WHERE id = ?`, tools, db.now(), id)
 	return err
 }

@@ -11,9 +11,9 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"os"
@@ -22,8 +22,8 @@ import (
 	"syscall"
 	"time"
 
-	appdelivery "github.com/openilink/openilink-hub/internal/app"
 	"github.com/openilink/openilink-hub/internal/api"
+	appdelivery "github.com/openilink/openilink-hub/internal/app"
 	"github.com/openilink/openilink-hub/internal/auth"
 	"github.com/openilink/openilink-hub/internal/bot"
 	"github.com/openilink/openilink-hub/internal/config"
@@ -70,9 +70,9 @@ func main() {
 		Name:          "Test App",
 		Slug:          *appSlug,
 		Description:   "Mock app for development",
-		Events:        json.RawMessage(`["message"]`),
-		Scopes:        json.RawMessage(`["message:read","message:write","contact:read","bot:read","tools:write"]`),
-		Tools:         json.RawMessage(`[]`),
+		Events:        jsonx.RawMessage(`["message"]`),
+		Scopes:        jsonx.RawMessage(`["message:read","message:write","contact:read","bot:read","tools:write"]`),
+		Tools:         jsonx.RawMessage(`[]`),
 		WebhookURL:    *webhookURL,
 		WebhookSecret: "mock-webhook-secret",
 		Status:        "active",
@@ -83,8 +83,8 @@ func main() {
 		BotID:            botID,
 		AppToken:         *appToken,
 		Handle:           *appSlug,
-		Scopes:           json.RawMessage(`["message:read","message:write","contact:read","bot:read","tools:write"]`),
-		Tools:            json.RawMessage(`[]`),
+		Scopes:           jsonx.RawMessage(`["message:read","message:write","contact:read","bot:read","tools:write"]`),
+		Tools:            jsonx.RawMessage(`[]`),
 		Enabled:          true,
 		AppName:          "Test App",
 		AppSlug:          *appSlug,
@@ -130,7 +130,7 @@ func main() {
 	if err := mgr.StartBot(ctx, &store.Bot{
 		ID:          botID,
 		Provider:    "mock",
-		Credentials: json.RawMessage(`{}`),
+		Credentials: jsonx.RawMessage(`{}`),
 	}); err != nil {
 		slog.Error("failed to start mock bot", "err", err)
 		os.Exit(1)
@@ -214,7 +214,7 @@ type controlHandler struct {
 // handleConfig returns the mock server configuration.
 func (c *controlHandler) handleConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"bot_id":    c.botID,
 		"app_id":    c.appID,
 		"inst_id":   c.instID,
@@ -242,7 +242,7 @@ func (c *controlHandler) handleInjectEvent(w http.ResponseWriter, r *http.Reques
 		Type    string `json:"type"`
 		GroupID string `json:"group_id"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid json"}`, http.StatusBadRequest)
 		return
 	}
@@ -279,7 +279,7 @@ func (c *controlHandler) handleInjectEvent(w http.ResponseWriter, r *http.Reques
 	c.provider.InjectMessage(msg)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"ok":          true,
 		"external_id": externalID,
 		"sender":      req.Sender,
@@ -310,10 +310,10 @@ func (c *controlHandler) handleListMessages(w http.ResponseWriter, r *http.Reque
 
 	// Build response from store messages
 	type storeMsg struct {
-		ID       int64           `json:"id"`
-		To       string          `json:"to"`
-		Items    json.RawMessage `json:"items"`
-		CreateAt int64           `json:"created_at"`
+		ID       int64            `json:"id"`
+		To       string           `json:"to"`
+		Items    jsonx.RawMessage `json:"items"`
+		CreateAt int64            `json:"created_at"`
 	}
 	var storeMsgs []storeMsg
 	for _, m := range sent {
@@ -326,7 +326,7 @@ func (c *controlHandler) handleListMessages(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"store_messages":    storeMsgs,
 		"provider_messages": provMsgs,
 	})
@@ -337,6 +337,5 @@ func (c *controlHandler) handleReset(w http.ResponseWriter, r *http.Request) {
 	c.store.Reset()
 	c.provider.ClearSent()
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	_ = jsonx.NewEncoder(w).Encode(map[string]any{"ok": true})
 }
-

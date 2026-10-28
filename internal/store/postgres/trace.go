@@ -3,8 +3,8 @@ package postgres
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"time"
 
 	"github.com/openilink/openilink-hub/internal/store"
@@ -31,7 +31,7 @@ func (db *DB) AppendSpan(traceID, botID, name, kind, statusCode, statusMessage s
 	var parentSpanID string
 	_ = db.QueryRow("SELECT span_id FROM trace_spans WHERE trace_id=$1 AND parent_span_id='' LIMIT 1", traceID).Scan(&parentSpanID)
 
-	attrsJSON, _ := json.Marshal(attrs)
+	attrsJSON, _ := jsonx.Marshal(attrs)
 	now := time.Now().UnixMilli()
 	_, err := db.Exec(`INSERT INTO trace_spans
 		(trace_id, span_id, parent_span_id, name, kind, status_code, status_message, start_time, end_time, attributes, events, bot_id)
@@ -77,14 +77,14 @@ func scanSpans(rows interface {
 	var spans []store.TraceSpan
 	for rows.Next() {
 		var s store.TraceSpan
-		var attrsJSON, eventsJSON json.RawMessage
+		var attrsJSON, eventsJSON jsonx.RawMessage
 		if err := rows.Scan(&s.ID, &s.TraceID, &s.SpanID, &s.ParentSpanID, &s.Name, &s.Kind,
 			&s.StatusCode, &s.StatusMessage, &s.StartTime, &s.EndTime,
 			&attrsJSON, &eventsJSON, &s.BotID, &s.CreatedAt); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal(attrsJSON, &s.Attributes)
-		_ = json.Unmarshal(eventsJSON, &s.Events)
+		_ = jsonx.Unmarshal(attrsJSON, &s.Attributes)
+		_ = jsonx.Unmarshal(eventsJSON, &s.Events)
 		spans = append(spans, s)
 	}
 	return spans, rows.Err()

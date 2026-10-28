@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -80,7 +80,7 @@ func (s *Server) handleAppOAuthExchange(w http.ResponseWriter, r *http.Request) 
 		Code         string `json:"code"`
 		CodeVerifier string `json:"code_verifier"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Code == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Code == "" {
 		jsonError(w, "code required", http.StatusBadRequest)
 		return
 	}
@@ -148,7 +148,7 @@ func (s *Server) handleAppOAuthExchange(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"installation_id": inst.ID,
 		"app_token":       inst.AppToken,
 		"webhook_secret":  app.WebhookSecret,

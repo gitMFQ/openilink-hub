@@ -2,7 +2,7 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -80,7 +80,7 @@ func doJSON(t *testing.T, ts *httptest.Server, method, path string, body any, op
 	t.Helper()
 	var bodyReader *bytes.Reader
 	if body != nil {
-		b, _ := json.Marshal(body)
+		b, _ := jsonx.Marshal(body)
 		bodyReader = bytes.NewReader(b)
 	} else {
 		bodyReader = bytes.NewReader(nil)
@@ -111,7 +111,7 @@ func withBearer(token string) func(*http.Request) {
 func decodeJSON(t *testing.T, resp *http.Response) map[string]any {
 	t.Helper()
 	var m map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+	if err := jsonx.NewDecoder(resp.Body).Decode(&m); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
 	resp.Body.Close()
@@ -121,7 +121,7 @@ func decodeJSON(t *testing.T, resp *http.Response) map[string]any {
 // createTestBot creates a bot owned by the given user via the store.
 func createTestBot(t *testing.T, s store.Store, userID, name string) *store.Bot {
 	t.Helper()
-	b, err := s.CreateBot(userID, name, "test", "", json.RawMessage(`{}`))
+	b, err := s.CreateBot(userID, name, "test", "", jsonx.RawMessage(`{}`))
 	if err != nil {
 		t.Fatalf("CreateBot: %v", err)
 	}
@@ -131,7 +131,7 @@ func createTestBot(t *testing.T, s store.Store, userID, name string) *store.Bot 
 // createTestApp creates an app with the given scopes via the store.
 func createTestApp(t *testing.T, s store.Store, ownerID, name, slug string, scopes []string) *store.App {
 	t.Helper()
-	scopesJSON, _ := json.Marshal(scopes)
+	scopesJSON, _ := jsonx.Marshal(scopes)
 	app, err := s.CreateApp(&store.App{
 		OwnerID: ownerID,
 		Name:    name,
@@ -677,7 +677,7 @@ func TestAppAPI_List(t *testing.T) {
 		}
 
 		var apps []map[string]any
-		json.NewDecoder(resp.Body).Decode(&apps)
+		jsonx.NewDecoder(resp.Body).Decode(&apps)
 		if len(apps) < 2 {
 			t.Errorf("expected at least 2 apps, got %d", len(apps))
 		}
@@ -757,9 +757,9 @@ func TestAppAPI_RequestListingValidation(t *testing.T) {
 	})
 
 	t.Run("complete app can be listed", func(t *testing.T) {
-		tools, _ := json.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
-		events, _ := json.Marshal([]string{"command"})
-		scopes, _ := json.Marshal([]string{"message:write"})
+		tools, _ := jsonx.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
+		events, _ := jsonx.Marshal([]string{"command"})
+		scopes, _ := jsonx.Marshal([]string{"message:write"})
 		app, err := env.store.CreateApp(&store.App{
 			OwnerID:     env.user.ID,
 			Name:        "Complete App",
@@ -796,8 +796,8 @@ func TestAppAPI_RequestListingValidation(t *testing.T) {
 	t.Run("unverified webhook allowed", func(t *testing.T) {
 		// Webhook verification is no longer required for listing —
 		// apps with OAuth/PKCE don't need it, and verification can happen post-listing.
-		tools, _ := json.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
-		scopes, _ := json.Marshal([]string{"message:write"})
+		tools, _ := jsonx.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
+		scopes, _ := jsonx.Marshal([]string{"message:write"})
 		app, _ := env.store.CreateApp(&store.App{
 			OwnerID:     env.user.ID,
 			Name:        "Unverified Webhook App",
@@ -828,9 +828,9 @@ func TestAppAPI_PendingFreeze(t *testing.T) {
 	env := setupTestEnv(t)
 
 	// Create a complete app and set it to pending via store directly.
-	tools, _ := json.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
-	events, _ := json.Marshal([]string{"command"})
-	scopes, _ := json.Marshal([]string{"message:write"})
+	tools, _ := jsonx.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
+	events, _ := jsonx.Marshal([]string{"command"})
+	scopes, _ := jsonx.Marshal([]string{"message:write"})
 	app, _ := env.store.CreateApp(&store.App{
 		OwnerID:     env.user.ID,
 		Name:        "Freeze Test App",
@@ -920,8 +920,8 @@ func TestAppAPI_WithdrawListing(t *testing.T) {
 func TestAppAPI_AutoRevertOnCoreChange(t *testing.T) {
 	env := setupTestEnv(t)
 
-	tools, _ := json.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
-	scopes, _ := json.Marshal([]string{"message:write"})
+	tools, _ := jsonx.Marshal([]map[string]string{{"name": "ping", "description": "ping"}})
+	scopes, _ := jsonx.Marshal([]string{"message:write"})
 	app, _ := env.store.CreateApp(&store.App{
 		OwnerID:     env.user.ID,
 		Name:        "Revert Test App",
@@ -981,9 +981,9 @@ func TestAppAPI_FullListingLifecycle(t *testing.T) {
 	// Stand up a test HTTP server that responds to webhook verification challenges.
 	webhookServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req map[string]any
-		json.NewDecoder(r.Body).Decode(&req)
+		jsonx.NewDecoder(r.Body).Decode(&req)
 		if req["type"] == "url_verification" {
-			json.NewEncoder(w).Encode(map[string]string{"challenge": req["challenge"].(string)})
+			jsonx.NewEncoder(w).Encode(map[string]string{"challenge": req["challenge"].(string)})
 			return
 		}
 		w.WriteHeader(200)
@@ -992,9 +992,9 @@ func TestAppAPI_FullListingLifecycle(t *testing.T) {
 
 	// Step 1: Create app via API, then set version via store (version is not
 	// exposed in the create-app API but is required for listing submission).
-	tools, _ := json.Marshal([]map[string]string{{"name": "ping", "description": "pong"}})
-	events, _ := json.Marshal([]string{"command"})
-	scopes, _ := json.Marshal([]string{"message:write"})
+	tools, _ := jsonx.Marshal([]map[string]string{{"name": "ping", "description": "pong"}})
+	events, _ := jsonx.Marshal([]string{"command"})
+	scopes, _ := jsonx.Marshal([]string{"message:write"})
 
 	var appID string
 	t.Run("1_create_app", func(t *testing.T) {
@@ -1003,9 +1003,9 @@ func TestAppAPI_FullListingLifecycle(t *testing.T) {
 			"slug":        "lifecycle-app",
 			"description": "An app for lifecycle testing",
 			"readme":      "# Lifecycle App\nFull lifecycle test.",
-			"tools":       json.RawMessage(tools),
-			"events":      json.RawMessage(events),
-			"scopes":      json.RawMessage(scopes),
+			"tools":       jsonx.RawMessage(tools),
+			"events":      jsonx.RawMessage(events),
+			"scopes":      jsonx.RawMessage(scopes),
 		}, withCookie(env.cookie))
 		defer resp.Body.Close()
 
@@ -1205,7 +1205,7 @@ func TestAppAPI_FullListingLifecycle(t *testing.T) {
 				Name string `json:"name"`
 			} `json:"apps"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&manifest); err != nil {
+		if err := jsonx.NewDecoder(resp.Body).Decode(&manifest); err != nil {
 			t.Fatalf("decode manifest: %v", err)
 		}
 		if manifest.Version != 1 {
@@ -1321,7 +1321,7 @@ func TestAppAPI_FullListingLifecycle(t *testing.T) {
 		var raw struct {
 			Apps []map[string]any `json:"apps"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		if err := jsonx.NewDecoder(resp.Body).Decode(&raw); err != nil {
 			t.Fatalf("decode manifest: %v", err)
 		}
 
@@ -1459,10 +1459,10 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 			{"name": "hn", "description": "HackerNews top", "command": "hn"},
 			{"name": "weather", "description": "Check weather", "command": "weather"},
 		}
-		toolsJSON, _ := json.Marshal(newTools)
+		toolsJSON, _ := jsonx.Marshal(newTools)
 
 		resp := doJSON(t, env.ts, "PUT", "/bot/v1/app/tools",
-			map[string]any{"tools": json.RawMessage(toolsJSON)},
+			map[string]any{"tools": jsonx.RawMessage(toolsJSON)},
 			withBearer(inst.AppToken))
 		defer resp.Body.Close()
 
@@ -1484,7 +1484,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 			t.Fatalf("GetApp: %v", err)
 		}
 		var tools []map[string]any
-		json.Unmarshal(updated.Tools, &tools)
+		jsonx.Unmarshal(updated.Tools, &tools)
 		if len(tools) != 2 {
 			t.Errorf("stored tools count = %d, want 2", len(tools))
 		}
@@ -1496,7 +1496,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 		inst2 := installTestApp(t, env.store, app2.ID, bot.ID)
 
 		resp := doJSON(t, env.ts, "PUT", "/bot/v1/app/tools",
-			map[string]any{"tools": json.RawMessage(`[{"name":"test"}]`)},
+			map[string]any{"tools": jsonx.RawMessage(`[{"name":"test"}]`)},
 			withBearer(inst2.AppToken))
 		defer resp.Body.Close()
 
@@ -1507,7 +1507,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 
 	t.Run("update tools on marketplace app falls back to installation tools", func(t *testing.T) {
 		// Create marketplace app (has registry set)
-		mktScopes, _ := json.Marshal([]string{"tools:write"})
+		mktScopes, _ := jsonx.Marshal([]string{"tools:write"})
 		mktApp, err := env.store.CreateApp(&store.App{
 			OwnerID:  env.user.ID,
 			Name:     "Marketplace App",
@@ -1521,7 +1521,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 		mktInst := installTestApp(t, env.store, mktApp.ID, bot.ID)
 
 		resp := doJSON(t, env.ts, "PUT", "/bot/v1/app/tools",
-			map[string]any{"tools": json.RawMessage(`[{"name":"test"}]`)},
+			map[string]any{"tools": jsonx.RawMessage(`[{"name":"test"}]`)},
 			withBearer(mktInst.AppToken))
 		defer resp.Body.Close()
 
@@ -1541,7 +1541,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 		}
 		var appTools []map[string]any
 		if len(updatedApp.Tools) > 0 {
-			if err := json.Unmarshal(updatedApp.Tools, &appTools); err != nil {
+			if err := jsonx.Unmarshal(updatedApp.Tools, &appTools); err != nil {
 				t.Fatalf("unmarshal app tools: %v", err)
 			}
 		}
@@ -1555,7 +1555,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 			t.Fatalf("GetInstallation: %v", err)
 		}
 		var instTools []map[string]any
-		if err := json.Unmarshal(updatedInst.Tools, &instTools); err != nil {
+		if err := jsonx.Unmarshal(updatedInst.Tools, &instTools); err != nil {
 			t.Fatalf("unmarshal installation tools: %v", err)
 		}
 		if len(instTools) != 1 || instTools[0]["name"] != "test" {
@@ -1565,7 +1565,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 
 	t.Run("update tools on builtin app falls back to installation tools", func(t *testing.T) {
 		// Create builtin app
-		biScopes, _ := json.Marshal([]string{"tools:write"})
+		biScopes, _ := jsonx.Marshal([]string{"tools:write"})
 		biApp, err := env.store.CreateApp(&store.App{
 			OwnerID:  env.user.ID,
 			Name:     "Builtin App",
@@ -1579,7 +1579,7 @@ func TestBotAPI_UpdateTools(t *testing.T) {
 		biInst := installTestApp(t, env.store, biApp.ID, bot.ID)
 
 		resp := doJSON(t, env.ts, "PUT", "/bot/v1/app/tools",
-			map[string]any{"tools": json.RawMessage(`[{"name":"test"}]`)},
+			map[string]any{"tools": jsonx.RawMessage(`[{"name":"test"}]`)},
 			withBearer(biInst.AppToken))
 		defer resp.Body.Close()
 
@@ -1648,7 +1648,7 @@ func TestScopeSnapshotAtInstall(t *testing.T) {
 			t.Fatalf("GetInstallation: %v", err)
 		}
 		var instScopes []string
-		json.Unmarshal(inst.Scopes, &instScopes)
+		jsonx.Unmarshal(inst.Scopes, &instScopes)
 		if len(instScopes) != 2 {
 			t.Fatalf("expected 2 scopes, got %d: %v", len(instScopes), instScopes)
 		}
@@ -1656,7 +1656,7 @@ func TestScopeSnapshotAtInstall(t *testing.T) {
 
 	t.Run("app scope change does not affect existing installation", func(t *testing.T) {
 		// Update app scopes (add tools:write)
-		newScopes, _ := json.Marshal([]string{"message:write", "message:read", "tools:write"})
+		newScopes, _ := jsonx.Marshal([]string{"message:write", "message:read", "tools:write"})
 		env.store.UpdateApp(app.ID, app.Name, app.Description, app.Icon, app.IconURL,
 			app.Homepage, app.OAuthSetupURL, app.OAuthRedirectURL, app.ConfigSchema,
 			app.Version, app.Readme, app.Guide, app.Tools, app.Events, newScopes)
@@ -1665,7 +1665,7 @@ func TestScopeSnapshotAtInstall(t *testing.T) {
 		installations, _ := env.store.ListInstallationsByApp(app.ID)
 		for _, inst := range installations {
 			var instScopes []string
-			json.Unmarshal(inst.Scopes, &instScopes)
+			jsonx.Unmarshal(inst.Scopes, &instScopes)
 			for _, s := range instScopes {
 				if s == "tools:write" {
 					t.Error("existing installation should not have new scope tools:write")
@@ -1691,7 +1691,7 @@ func TestScopeSnapshotAtInstall(t *testing.T) {
 		// Now should have new scope
 		updated, _ := env.store.GetInstallation(inst.ID)
 		var updatedScopes []string
-		json.Unmarshal(updated.Scopes, &updatedScopes)
+		jsonx.Unmarshal(updated.Scopes, &updatedScopes)
 		found := false
 		for _, s := range updatedScopes {
 			if s == "tools:write" {
@@ -1737,7 +1737,7 @@ func TestScopeSnapshotAtInstall(t *testing.T) {
 		instID := body["id"].(string)
 		inst, _ := env.store.GetInstallation(instID)
 		var instScopes []string
-		json.Unmarshal(inst.Scopes, &instScopes)
+		jsonx.Unmarshal(inst.Scopes, &instScopes)
 		if len(instScopes) != 1 || instScopes[0] != "message:write" {
 			t.Errorf("expected [message:write], got %v", instScopes)
 		}
@@ -1790,7 +1790,7 @@ func TestBotAPI_UpdateInstallationTools(t *testing.T) {
 			t.Fatalf("GetInstallation: %v", err)
 		}
 		var storedTools []store.AppTool
-		if err := json.Unmarshal(inst.Tools, &storedTools); err != nil {
+		if err := jsonx.Unmarshal(inst.Tools, &storedTools); err != nil {
 			t.Fatalf("unmarshal tools: %v", err)
 		}
 		if len(storedTools) != 2 {
@@ -1800,7 +1800,7 @@ func TestBotAPI_UpdateInstallationTools(t *testing.T) {
 		// App-level tools should remain unchanged (empty).
 		app, _ := env.store.GetApp(appWithScope.ID)
 		var appTools []store.AppTool
-		json.Unmarshal(app.Tools, &appTools)
+		jsonx.Unmarshal(app.Tools, &appTools)
 		if len(appTools) != 0 {
 			t.Errorf("app tools should be empty, got %d", len(appTools))
 		}
@@ -1925,7 +1925,7 @@ func TestMarketplaceInstalledStatusIsPerUser(t *testing.T) {
 	}
 	registryTS := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		_ = jsonx.NewEncoder(w).Encode(map[string]any{
 			"version": 1,
 			"apps":    registryApps,
 		})
@@ -1951,7 +1951,7 @@ func TestMarketplaceInstalledStatusIsPerUser(t *testing.T) {
 		Registry:    registryTS.URL,
 		Version:     "1.0.0",
 		Listing:     "listed",
-		Scopes:      json.RawMessage(`["message:write"]`),
+		Scopes:      jsonx.RawMessage(`["message:write"]`),
 	})
 	if err != nil {
 		t.Fatalf("CreateApp(remote): %v", err)
@@ -1973,7 +1973,7 @@ func TestMarketplaceInstalledStatusIsPerUser(t *testing.T) {
 		}
 
 		var body []map[string]any
-		if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		if err := jsonx.NewDecoder(resp.Body).Decode(&body); err != nil {
 			t.Fatalf("decode marketplace response: %v", err)
 		}
 		var remote map[string]any
@@ -2036,9 +2036,9 @@ func TestUpdateListedAppWithEquivalentJSONDoesNotUnlist(t *testing.T) {
 		Slug:         "listed-app",
 		Description:  "listed app",
 		Listing:      "listed",
-		Tools:        json.RawMessage(`[{"name":"tool","description":"Tool"}]`),
-		Events:       json.RawMessage(`["reaction.added","message"]`),
-		Scopes:       json.RawMessage(`["message:write","message:read"]`),
+		Tools:        jsonx.RawMessage(`[{"name":"tool","description":"Tool"}]`),
+		Events:       jsonx.RawMessage(`["reaction.added","message"]`),
+		Scopes:       jsonx.RawMessage(`["message:write","message:read"]`),
 		ConfigSchema: `{"properties":{"name":{"type":"string"}},"type":"object"}`,
 		Version:      "1.0.0",
 	})

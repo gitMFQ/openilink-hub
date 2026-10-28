@@ -4,9 +4,9 @@
 package memstore
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -160,7 +160,7 @@ func (s *Store) ListRecentContacts(botID string, limit int) ([]store.RecentConta
 }
 
 func (s *Store) ListBotsByUser(string) ([]store.Bot, error) { return nil, nil }
-func (s *Store) CreateBot(string, string, string, string, json.RawMessage) (*store.Bot, error) {
+func (s *Store) CreateBot(string, string, string, string, jsonx.RawMessage) (*store.Bot, error) {
 	return nil, errNotImplemented
 }
 func (s *Store) FindBotByProviderID(string, string) (*store.Bot, error) {
@@ -169,15 +169,15 @@ func (s *Store) FindBotByProviderID(string, string) (*store.Bot, error) {
 func (s *Store) FindBotByCredential(string, string) (*store.Bot, error) {
 	return nil, errNotImplemented
 }
-func (s *Store) UpdateBotCredentials(string, string, json.RawMessage) error { return nil }
-func (s *Store) UpdateBotName(string, string) error                         { return nil }
-func (s *Store) UpdateBotDisplayName(string, string) error                  { return nil }
-func (s *Store) UpdateBotSyncState(string, json.RawMessage) error           { return nil }
-func (s *Store) UpdateBotReminder(string, int) error                        { return nil }
-func (s *Store) MarkBotReminded(string) error                               { return nil }
-func (s *Store) GetBotsNeedingReminder() ([]store.Bot, error)               { return nil, nil }
-func (s *Store) DeleteBot(string) error                                     { return nil }
-func (s *Store) CountBotsByUser(string) (int, error)                        { return 0, nil }
+func (s *Store) UpdateBotCredentials(string, string, jsonx.RawMessage) error { return nil }
+func (s *Store) UpdateBotName(string, string) error                          { return nil }
+func (s *Store) UpdateBotDisplayName(string, string) error                   { return nil }
+func (s *Store) UpdateBotSyncState(string, jsonx.RawMessage) error           { return nil }
+func (s *Store) UpdateBotReminder(string, int) error                         { return nil }
+func (s *Store) MarkBotReminded(string) error                                { return nil }
+func (s *Store) GetBotsNeedingReminder() ([]store.Bot, error)                { return nil, nil }
+func (s *Store) DeleteBot(string) error                                      { return nil }
+func (s *Store) CountBotsByUser(string) (int, error)                         { return 0, nil }
 func (s *Store) GetAdminStats() (*store.AdminStats, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -268,10 +268,10 @@ func (s *Store) ListMessages(string, int, int64) ([]store.Message, error)       
 func (s *Store) ListMessagesBySender(string, string, int) ([]store.Message, error) { return nil, nil }
 func (s *Store) ListChannelMessages(string, string, int) ([]store.Message, error)  { return nil, nil }
 func (s *Store) GetMessagesSince(string, int64, int) ([]store.Message, error)      { return nil, nil }
-func (s *Store) UpdateMediaStatus(string, string, json.RawMessage) error           { return nil }
-func (s *Store) UpdateMediaStatusByID(int64, string, json.RawMessage) error        { return nil }
-func (s *Store) UpdateMessagePayload(int64, json.RawMessage) error                 { return nil }
-func (s *Store) UpdateMediaPayloads(string, string, json.RawMessage) error         { return nil }
+func (s *Store) UpdateMediaStatus(string, string, jsonx.RawMessage) error          { return nil }
+func (s *Store) UpdateMediaStatusByID(int64, string, jsonx.RawMessage) error       { return nil }
+func (s *Store) UpdateMessagePayload(int64, jsonx.RawMessage) error                { return nil }
+func (s *Store) UpdateMediaPayloads(string, string, jsonx.RawMessage) error        { return nil }
 func (s *Store) MarkProcessed(int64) error                                         { return nil }
 func (s *Store) GetUnprocessedMessages(string, int) ([]store.Message, error)       { return nil, nil }
 func (s *Store) PruneMessages(int) (int64, error)                                  { return 0, nil }
@@ -331,7 +331,7 @@ func (s *Store) ListInstallationsByBot(botID string) ([]store.AppInstallation, e
 	return out, nil
 }
 
-func (s *Store) UpdateAppTools(id string, tools json.RawMessage) error {
+func (s *Store) UpdateAppTools(id string, tools jsonx.RawMessage) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if a, ok := s.apps[id]; ok {
@@ -340,7 +340,7 @@ func (s *Store) UpdateAppTools(id string, tools json.RawMessage) error {
 	return nil
 }
 
-func (s *Store) UpdateInstallationTools(id string, tools json.RawMessage) error {
+func (s *Store) UpdateInstallationTools(id string, tools jsonx.RawMessage) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if inst, ok := s.installations[id]; ok {
@@ -366,7 +366,7 @@ func (s *Store) ListAppsByOwner(string) ([]store.App, error)     { return nil, n
 func (s *Store) ListListedApps() ([]store.App, error)            { return nil, nil }
 func (s *Store) ListAllApps() ([]store.App, error)               { return nil, nil }
 func (s *Store) ListMarketplaceApps() ([]store.App, error)       { return nil, nil }
-func (s *Store) UpdateApp(string, string, string, string, string, string, string, string, string, string, string, string, json.RawMessage, json.RawMessage, json.RawMessage) error {
+func (s *Store) UpdateApp(string, string, string, string, string, string, string, string, string, string, string, string, jsonx.RawMessage, jsonx.RawMessage, jsonx.RawMessage) error {
 	return nil
 }
 func (s *Store) UpdateAppWithTransition(id string, update store.AppUpdate, nextListing string) (store.AppUpdateResult, error) {
@@ -411,7 +411,7 @@ func (s *Store) UpdateAppWithTransition(id string, update store.AppUpdate, nextL
 
 	return result, nil
 }
-func (s *Store) UpdateMarketplaceApp(string, string, string, string, string, string, string, string, string, string, string, json.RawMessage, json.RawMessage, json.RawMessage) error {
+func (s *Store) UpdateMarketplaceApp(string, string, string, string, string, string, string, string, string, string, string, jsonx.RawMessage, jsonx.RawMessage, jsonx.RawMessage) error {
 	return nil
 }
 func (s *Store) DeleteApp(string) error { return nil }
@@ -420,7 +420,7 @@ func (s *Store) InstallApp(string, string) (*store.AppInstallation, error) {
 }
 func (s *Store) InstalledAppIDs(string) (map[string]bool, error)                { return nil, nil }
 func (s *Store) ListInstallationsByApp(string) ([]store.AppInstallation, error) { return nil, nil }
-func (s *Store) UpdateInstallation(string, string, json.RawMessage, json.RawMessage, bool) error {
+func (s *Store) UpdateInstallation(string, string, jsonx.RawMessage, jsonx.RawMessage, bool) error {
 	return nil
 }
 func (s *Store) SetAppWebhookVerified(string, bool) error           { return nil }

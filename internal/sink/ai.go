@@ -3,8 +3,8 @@ package sink
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net"
@@ -76,7 +76,7 @@ func (s *AI) handleCommand(d Delivery, cmd string) {
 	availableRaw := global["ai.available_models"]
 	var available []string
 	if availableRaw != "" {
-		if err := json.Unmarshal([]byte(availableRaw), &available); err != nil {
+		if err := jsonx.Unmarshal([]byte(availableRaw), &available); err != nil {
 			slog.Warn("ai: malformed ai.available_models config", "err", err)
 		}
 	}
@@ -402,7 +402,7 @@ func (s *AI) reply(d Delivery) {
 	}
 
 	// Save only the content (not thinking) to message history to avoid polluting context
-	itemList, _ := json.Marshal([]map[string]any{{"type": "text", "text": result.Content}})
+	itemList, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": result.Content}})
 	s.Store.SaveMessage(&store.Message{
 		BotID:       d.BotDBID,
 		Direction:   "outbound",
@@ -433,7 +433,7 @@ func (s *AI) collectTools(botID string) []ai.Tool {
 			continue
 		}
 		var appTools []store.AppTool
-		json.Unmarshal(app.Tools, &appTools)
+		jsonx.Unmarshal(app.Tools, &appTools)
 		for _, t := range appTools {
 			if t.Name == "" {
 				continue
@@ -460,24 +460,24 @@ func (s *AI) collectTools(botID string) []ai.Tool {
 //   - bare properties map (no "type"/"properties" keys) → wrapped
 //   - per-property "required":true → hoisted to top-level "required" array
 //   - already well-formed → cleaned of per-property "required" if present
-func ensureObjectSchema(raw json.RawMessage) json.RawMessage {
+func ensureObjectSchema(raw jsonx.RawMessage) jsonx.RawMessage {
 	if len(raw) == 0 || string(raw) == "null" {
-		return json.RawMessage(`{"type":"object","properties":{}}`)
+		return jsonx.RawMessage(`{"type":"object","properties":{}}`)
 	}
-	var m map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &m); err != nil {
-		return json.RawMessage(`{"type":"object","properties":{}}`)
+	var m map[string]jsonx.RawMessage
+	if err := jsonx.Unmarshal(raw, &m); err != nil {
+		return jsonx.RawMessage(`{"type":"object","properties":{}}`)
 	}
 
 	// Determine whether this is already a schema (has "type") or a bare
 	// properties map (keys are property names like "text", "size").
 	_, hasType := m["type"]
 
-	var propsRaw map[string]json.RawMessage
+	var propsRaw map[string]jsonx.RawMessage
 	if hasType {
 		// Already a schema – extract properties to clean them
 		if p, ok := m["properties"]; ok {
-			json.Unmarshal(p, &propsRaw)
+			jsonx.Unmarshal(p, &propsRaw)
 		}
 	} else {
 		// Bare properties map – the top-level keys are property names
@@ -489,7 +489,7 @@ func ensureObjectSchema(raw json.RawMessage) json.RawMessage {
 	cleanedProps := make(map[string]any, len(propsRaw))
 	for name, propRaw := range propsRaw {
 		var prop map[string]any
-		if err := json.Unmarshal(propRaw, &prop); err != nil {
+		if err := jsonx.Unmarshal(propRaw, &prop); err != nil {
 			cleanedProps[name] = propRaw
 			continue
 		}
@@ -509,9 +509,9 @@ func ensureObjectSchema(raw json.RawMessage) json.RawMessage {
 	if len(required) > 0 {
 		schema["required"] = required
 	}
-	out, err := json.Marshal(schema)
+	out, err := jsonx.Marshal(schema)
 	if err != nil {
-		return json.RawMessage(`{"type":"object","properties":{}}`)
+		return jsonx.RawMessage(`{"type":"object","properties":{}}`)
 	}
 	return out
 }
@@ -538,7 +538,7 @@ func (s *AI) executeToolCall(ctx context.Context, d Delivery, tc ai.ToolCallRequ
 
 	// Parse arguments
 	var args map[string]any
-	json.Unmarshal(tc.Arguments, &args)
+	jsonx.Unmarshal(tc.Arguments, &args)
 
 	// Find the installation by ID
 	installation, err := s.Store.GetInstallation(instID)
@@ -648,9 +648,9 @@ func (s *AI) sendMediaToUser(ctx context.Context, d Delivery, images []ai.ImageD
 			continue
 		}
 		delivered = append(delivered, img)
-		itemList, _ := json.Marshal([]map[string]any{{"type": "image", "file_name": fileName}})
+		itemList, _ := jsonx.Marshal([]map[string]any{{"type": "image", "file_name": fileName}})
 		mediaStatus := ""
-		mediaKeys := json.RawMessage(`{}`)
+		mediaKeys := jsonx.RawMessage(`{}`)
 		if s.Storage != nil {
 			ext := ".jpg"
 			if strings.HasPrefix(ct, "image/png") {
@@ -664,7 +664,7 @@ func (s *AI) sendMediaToUser(ctx context.Context, d Delivery, images []ai.ImageD
 			key := fmt.Sprintf("%s/%s/ai_%d%s", d.BotDBID, now.Format("2006/01/02"), now.UnixMilli(), ext)
 			if _, err := s.Storage.Put(ctx, key, ct, img.Data); err == nil {
 				mediaStatus = "ready"
-				mediaKeys, _ = json.Marshal(map[string]string{"0": key})
+				mediaKeys, _ = jsonx.Marshal(map[string]string{"0": key})
 			}
 		}
 		s.Store.SaveMessage(&store.Message{
@@ -796,7 +796,7 @@ func (s *AI) resolveGlobalConfig() store.AIConfig {
 func parseCustomHeaders(raw string) map[string]string {
 	// Try array format first: [["k","v"],...]
 	var arr [][2]string
-	if json.Unmarshal([]byte(raw), &arr) == nil {
+	if jsonx.Unmarshal([]byte(raw), &arr) == nil {
 		m := make(map[string]string, len(arr))
 		for _, kv := range arr {
 			if kv[0] != "" {
@@ -810,7 +810,7 @@ func parseCustomHeaders(raw string) map[string]string {
 	}
 	// Fall back to object format: {"k":"v",...}
 	var m map[string]string
-	if json.Unmarshal([]byte(raw), &m) == nil && len(m) > 0 {
+	if jsonx.Unmarshal([]byte(raw), &m) == nil && len(m) > 0 {
 		return m
 	}
 	return nil

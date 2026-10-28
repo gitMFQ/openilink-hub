@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"time"
@@ -62,5 +62,5 @@ func (s *Server) handleRegistryApps(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=300")
-	json.NewEncoder(w).Encode(manifest)
+	jsonx.NewEncoder(w).Encode(manifest)
 }

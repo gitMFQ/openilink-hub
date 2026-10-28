@@ -1,8 +1,8 @@
 package builtin
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 
 	"github.com/openilink/openilink-hub/internal/app"
@@ -16,16 +16,16 @@ type Handler interface {
 
 // AppManifest defines a builtin app's metadata.
 type AppManifest struct {
-	Slug         string          `json:"slug"`
-	Name         string          `json:"name"`
-	Description  string          `json:"description"`
-	Icon         string          `json:"icon"`
-	Readme       string          `json:"readme"`
-	Guide        string          `json:"guide"`
-	Scopes       []string        `json:"scopes"`
-	Events       []string        `json:"events"`
-	Tools        []store.AppTool `json:"tools"`
-	ConfigSchema json.RawMessage `json:"config_schema"`
+	Slug         string           `json:"slug"`
+	Name         string           `json:"name"`
+	Description  string           `json:"description"`
+	Icon         string           `json:"icon"`
+	Readme       string           `json:"readme"`
+	Guide        string           `json:"guide"`
+	Scopes       []string         `json:"scopes"`
+	Events       []string         `json:"events"`
+	Tools        []store.AppTool  `json:"tools"`
+	ConfigSchema jsonx.RawMessage `json:"config_schema"`
 }
 
 var (
@@ -61,9 +61,9 @@ func Manifests() map[string]AppManifest {
 func SeedApps(s store.Store) error {
 	for _, m := range manifests {
 		existing, _ := s.GetAppBySlug(m.Slug, "builtin")
-		scopes, _ := json.Marshal(m.Scopes)
-		events, _ := json.Marshal(m.Events)
-		tools, _ := json.Marshal(m.Tools)
+		scopes, _ := jsonx.Marshal(m.Scopes)
+		events, _ := jsonx.Marshal(m.Events)
+		tools, _ := jsonx.Marshal(m.Tools)
 
 		if existing == nil {
 			_, err := s.CreateApp(&store.App{

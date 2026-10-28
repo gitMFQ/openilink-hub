@@ -2,7 +2,7 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"sync"
 )
 
@@ -37,17 +37,17 @@ type BindSession struct {
 }
 
 type BindPollResult struct {
-	Status      string          // "wait", "scanned", "expired", "confirmed"
-	QRURL       string          // new QR URL on refresh
-	Credentials json.RawMessage // set on "confirmed"
+	Status      string           // "wait", "scanned", "expired", "confirmed"
+	QRURL       string           // new QR URL on refresh
+	Credentials jsonx.RawMessage // set on "confirmed"
 }
 
 type StartOptions struct {
-	Credentials  json.RawMessage
-	SyncState    json.RawMessage
+	Credentials  jsonx.RawMessage
+	SyncState    jsonx.RawMessage
 	OnMessage    func(InboundMessage)
 	OnStatus     func(status string)
-	OnSyncUpdate func(state json.RawMessage)
+	OnSyncUpdate func(state jsonx.RawMessage)
 }
 
 type InboundMessage struct {
@@ -60,7 +60,7 @@ type InboundMessage struct {
 	Items        []MessageItem
 	ContextToken string
 	SessionID    string
-	Raw          json.RawMessage `json:"-"` // original provider message, not serialized in relay
+	Raw          jsonx.RawMessage `json:"-"` // original provider message, not serialized in relay
 }
 
 type OutboundMessage struct {

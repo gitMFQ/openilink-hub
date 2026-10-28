@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -101,7 +101,7 @@ func (s *Server) handleListMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	jsonx.NewEncoder(w).Encode(resp)
 }
 
 func encodeMsgCursor(id int64) string {
@@ -141,7 +141,7 @@ func (s *Server) handleWebhookLogs(w http.ResponseWriter, r *http.Request) {
 	if logs == nil {
 		logs = []store.WebhookLog{}
 	}
-	json.NewEncoder(w).Encode(logs)
+	jsonx.NewEncoder(w).Encode(logs)
 }
 
 func (s *Server) handleListTraces(w http.ResponseWriter, r *http.Request) {
@@ -172,7 +172,7 @@ func (s *Server) handleListTraces(w http.ResponseWriter, r *http.Request) {
 	if spans == nil {
 		spans = []store.TraceSpan{}
 	}
-	json.NewEncoder(w).Encode(spans)
+	jsonx.NewEncoder(w).Encode(spans)
 }
 
 func (s *Server) handleGetTrace(w http.ResponseWriter, r *http.Request) {
@@ -202,5 +202,5 @@ func (s *Server) handleGetTrace(w http.ResponseWriter, r *http.Request) {
 	if spans == nil {
 		spans = []store.TraceSpan{}
 	}
-	json.NewEncoder(w).Encode(spans)
+	jsonx.NewEncoder(w).Encode(spans)
 }

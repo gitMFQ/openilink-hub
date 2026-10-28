@@ -3,8 +3,8 @@ package postgres
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/google/uuid"
 	"github.com/openilink/openilink-hub/internal/store"
@@ -19,13 +19,13 @@ func generateToken(n int) string {
 func (db *DB) CreateApp(app *store.App) (*store.App, error) {
 	app.ID = uuid.New().String()
 	if app.Tools == nil {
-		app.Tools = json.RawMessage("[]")
+		app.Tools = jsonx.RawMessage("[]")
 	}
 	if app.Events == nil {
-		app.Events = json.RawMessage("[]")
+		app.Events = jsonx.RawMessage("[]")
 	}
 	if app.Scopes == nil {
-		app.Scopes = json.RawMessage("[]")
+		app.Scopes = jsonx.RawMessage("[]")
 	}
 	if app.WebhookSecret == "" {
 		app.WebhookSecret = generateToken(32)
@@ -215,7 +215,7 @@ func (db *DB) ListMarketplaceApps() ([]store.App, error) {
 	return apps, rows.Err()
 }
 
-func (db *DB) UpdateApp(id string, name, description, icon, iconURL, homepage, oauthSetupURL, oauthRedirectURL, configSchema, version, readme, guide string, tools, events, scopes json.RawMessage) error {
+func (db *DB) UpdateApp(id string, name, description, icon, iconURL, homepage, oauthSetupURL, oauthRedirectURL, configSchema, version, readme, guide string, tools, events, scopes jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE apps SET name=$1, description=$2, icon=$3, icon_url=$4, homepage=$5,
 		tools=$6, events=$7, scopes=$8, oauth_setup_url=$9, oauth_redirect_url=$10, config_schema=$11,
 		version=$12, readme=$13, guide=$14, updated_at=$15 WHERE id=$16`,
@@ -264,7 +264,7 @@ func (db *DB) UpdateAppWithTransition(id string, update store.AppUpdate, nextLis
 	return result, nil
 }
 
-func (db *DB) UpdateMarketplaceApp(id, name, description, iconURL, homepage, webhookURL, oauthSetupURL, oauthRedirectURL, version, readme, guide string, tools, events, scopes json.RawMessage) error {
+func (db *DB) UpdateMarketplaceApp(id, name, description, iconURL, homepage, webhookURL, oauthSetupURL, oauthRedirectURL, version, readme, guide string, tools, events, scopes jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE apps SET name=$1, description=$2, icon_url=$3, homepage=$4,
 		webhook_url=$5, oauth_setup_url=$6, oauth_redirect_url=$7, version=$8, readme=$9, guide=$10,
 		tools=$11, events=$12, scopes=$13, updated_at=$14 WHERE id=$15`,
@@ -283,11 +283,11 @@ func (db *DB) InstallApp(appID, botID string) (*store.AppInstallation, error) {
 		AppID:    appID,
 		BotID:    botID,
 		AppToken: "app_" + generateToken(32),
-		Config:   json.RawMessage("{}"),
-		Scopes:   json.RawMessage("[]"),
+		Config:   jsonx.RawMessage("{}"),
+		Scopes:   jsonx.RawMessage("[]"),
 		Enabled:  true,
 	}
-	inst.Tools = json.RawMessage("[]")
+	inst.Tools = jsonx.RawMessage("[]")
 	err := db.QueryRow(`INSERT INTO app_installations (id, app_id, bot_id, app_token, config, scopes, tools)
 		VALUES ($1,$2,$3,$4,$5,$6,$7)
 		RETURNING EXTRACT(EPOCH FROM created_at)::BIGINT, EXTRACT(EPOCH FROM updated_at)::BIGINT`,
@@ -395,7 +395,7 @@ func (db *DB) listInstallations(where string, arg any) ([]store.AppInstallation,
 	return list, rows.Err()
 }
 
-func (db *DB) UpdateInstallation(id, handle string, config json.RawMessage, scopes json.RawMessage, enabled bool) error {
+func (db *DB) UpdateInstallation(id, handle string, config jsonx.RawMessage, scopes jsonx.RawMessage, enabled bool) error {
 	_, err := db.Exec(`UPDATE app_installations SET handle=$1, config=$2, scopes=$3, enabled=$4, updated_at=$5 WHERE id=$6`,
 		handle, config, scopes, enabled, db.now(), id)
 	return err
@@ -518,12 +518,12 @@ func (db *DB) SetListing(id, listing string) error {
 	return err
 }
 
-func (db *DB) UpdateAppTools(id string, tools json.RawMessage) error {
+func (db *DB) UpdateAppTools(id string, tools jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE apps SET tools = $1, updated_at = $2 WHERE id = $3`, tools, db.now(), id)
 	return err
 }
 
-func (db *DB) UpdateInstallationTools(id string, tools json.RawMessage) error {
+func (db *DB) UpdateInstallationTools(id string, tools jsonx.RawMessage) error {
 	_, err := db.Exec(`UPDATE app_installations SET tools = $1, updated_at = $2 WHERE id = $3`, tools, db.now(), id)
 	return err
 }

@@ -1,7 +1,7 @@
 package store
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"time"
 )
 
@@ -11,24 +11,24 @@ type Message struct {
 	ChannelID *string `json:"channel_id,omitempty"`
 	Direction string  `json:"direction"`
 
-	Seq          *int64          `json:"seq,omitempty"`
-	MessageID    *int64          `json:"message_id,omitempty"`
-	FromUserID   string          `json:"from_user_id"`
-	ToUserID     string          `json:"to_user_id,omitempty"`
-	ClientID     string          `json:"client_id,omitempty"`
-	CreateTimeMs *int64          `json:"create_time_ms,omitempty"`
-	UpdateTimeMs *int64          `json:"update_time_ms,omitempty"`
-	DeleteTimeMs *int64          `json:"delete_time_ms,omitempty"`
-	SessionID    string          `json:"session_id,omitempty"`
-	GroupID      string          `json:"group_id,omitempty"`
-	MessageType  int             `json:"message_type,omitempty"`
-	MessageState int             `json:"message_state,omitempty"`
-	ItemList     json.RawMessage `json:"item_list"`
-	ContextToken string          `json:"context_token,omitempty"`
+	Seq          *int64           `json:"seq,omitempty"`
+	MessageID    *int64           `json:"message_id,omitempty"`
+	FromUserID   string           `json:"from_user_id"`
+	ToUserID     string           `json:"to_user_id,omitempty"`
+	ClientID     string           `json:"client_id,omitempty"`
+	CreateTimeMs *int64           `json:"create_time_ms,omitempty"`
+	UpdateTimeMs *int64           `json:"update_time_ms,omitempty"`
+	DeleteTimeMs *int64           `json:"delete_time_ms,omitempty"`
+	SessionID    string           `json:"session_id,omitempty"`
+	GroupID      string           `json:"group_id,omitempty"`
+	MessageType  int              `json:"message_type,omitempty"`
+	MessageState int              `json:"message_state,omitempty"`
+	ItemList     jsonx.RawMessage `json:"item_list"`
+	ContextToken string           `json:"context_token,omitempty"`
 
-	MediaStatus string           `json:"media_status,omitempty"`
-	MediaKeys   json.RawMessage  `json:"media_keys,omitempty"`
-	Raw         *json.RawMessage `json:"raw,omitempty"`
+	MediaStatus string            `json:"media_status,omitempty"`
+	MediaKeys   jsonx.RawMessage  `json:"media_keys,omitempty"`
+	Raw         *jsonx.RawMessage `json:"raw,omitempty"`
 
 	CreatedAt int64 `json:"created_at"`
 }
@@ -49,10 +49,10 @@ type MessageStore interface {
 	GetLatestContextToken(botID string) string
 	HasFreshContextToken(botID string, maxAge time.Duration) bool
 	BatchHasFreshContextToken(botIDs []string, maxAge time.Duration) map[string]bool
-	UpdateMediaStatus(botID, status string, keys json.RawMessage) error
-	UpdateMediaStatusByID(id int64, status string, keys json.RawMessage) error
-	UpdateMessagePayload(id int64, payload json.RawMessage) error
-	UpdateMediaPayloads(botID, eqp string, newPayload json.RawMessage) error
+	UpdateMediaStatus(botID, status string, keys jsonx.RawMessage) error
+	UpdateMediaStatusByID(id int64, status string, keys jsonx.RawMessage) error
+	UpdateMessagePayload(id int64, payload jsonx.RawMessage) error
+	UpdateMediaPayloads(botID, eqp string, newPayload jsonx.RawMessage) error
 	MarkProcessed(id int64) error
 	GetUnprocessedMessages(botID string, limit int) ([]Message, error)
 	PruneMessages(maxAgeDays int) (int64, error)

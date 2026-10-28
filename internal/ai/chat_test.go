@@ -2,7 +2,7 @@ package ai
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,7 +23,7 @@ func (m *mockMessageStore) ListChannelMessages(channelID, sender string, limit i
 func (m *mockMessageStore) SaveMessage(_ *store.Message) (store.SaveResult, error) {
 	return store.SaveResult{}, nil
 }
-func (m *mockMessageStore) GetMessage(_ int64) (*store.Message, error)     { return nil, nil }
+func (m *mockMessageStore) GetMessage(_ int64) (*store.Message, error) { return nil, nil }
 func (m *mockMessageStore) ListMessages(_ string, _ int, _ int64) ([]store.Message, error) {
 	return nil, nil
 }
@@ -33,18 +33,18 @@ func (m *mockMessageStore) ListMessagesBySender(_, _ string, _ int) ([]store.Mes
 func (m *mockMessageStore) GetMessagesSince(_ string, _ int64, _ int) ([]store.Message, error) {
 	return nil, nil
 }
-func (m *mockMessageStore) GetLatestContextToken(_ string) string                        { return "" }
-func (m *mockMessageStore) HasFreshContextToken(_ string, _ time.Duration) bool          { return false }
+func (m *mockMessageStore) GetLatestContextToken(_ string) string               { return "" }
+func (m *mockMessageStore) HasFreshContextToken(_ string, _ time.Duration) bool { return false }
 func (m *mockMessageStore) BatchHasFreshContextToken(_ []string, _ time.Duration) map[string]bool {
 	return nil
 }
-func (m *mockMessageStore) UpdateMediaStatus(_, _ string, _ json.RawMessage) error   { return nil }
-func (m *mockMessageStore) UpdateMediaStatusByID(_ int64, _ string, _ json.RawMessage) error {
+func (m *mockMessageStore) UpdateMediaStatus(_, _ string, _ jsonx.RawMessage) error { return nil }
+func (m *mockMessageStore) UpdateMediaStatusByID(_ int64, _ string, _ jsonx.RawMessage) error {
 	return nil
 }
-func (m *mockMessageStore) UpdateMessagePayload(_ int64, _ json.RawMessage) error    { return nil }
-func (m *mockMessageStore) UpdateMediaPayloads(_, _ string, _ json.RawMessage) error { return nil }
-func (m *mockMessageStore) MarkProcessed(_ int64) error                              { return nil }
+func (m *mockMessageStore) UpdateMessagePayload(_ int64, _ jsonx.RawMessage) error    { return nil }
+func (m *mockMessageStore) UpdateMediaPayloads(_, _ string, _ jsonx.RawMessage) error { return nil }
+func (m *mockMessageStore) MarkProcessed(_ int64) error                               { return nil }
 func (m *mockMessageStore) GetUnprocessedMessages(_ string, _ int) ([]store.Message, error) {
 	return nil, nil
 }
@@ -59,7 +59,7 @@ func TestComplete_TextReply(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "content": "Hello!"}, "finish_reason": "stop"},
 			},
@@ -86,7 +86,7 @@ func TestComplete_ToolCall(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req chatRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), 400)
 			return
 		}
@@ -97,7 +97,7 @@ func TestComplete_ToolCall(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{
 					"message": map[string]any{
@@ -127,7 +127,7 @@ func TestComplete_ToolCall(t *testing.T) {
 			Function: ToolFunction{
 				Name:        "cmd.list_prs",
 				Description: "List pull requests",
-				Parameters:  json.RawMessage(`{"type":"object","properties":{"repo":{"type":"string"},"state":{"type":"string"}}}`),
+				Parameters:  jsonx.RawMessage(`{"type":"object","properties":{"repo":{"type":"string"},"state":{"type":"string"}}}`),
 			},
 		},
 	}
@@ -160,7 +160,7 @@ func TestComplete_ToolCall(t *testing.T) {
 		t.Errorf("name = %q, want %q", tc.Name, "cmd.list_prs")
 	}
 	var args map[string]string
-	if err := json.Unmarshal(tc.Arguments, &args); err != nil {
+	if err := jsonx.Unmarshal(tc.Arguments, &args); err != nil {
 		t.Fatalf("unmarshal arguments: %v", err)
 	}
 	if args["repo"] != "openilink/hub" {
@@ -178,11 +178,11 @@ func TestContinueWithToolResults(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n := callCount.Add(1)
 		var req chatRequest
-		json.NewDecoder(r.Body).Decode(&req)
+		jsonx.NewDecoder(r.Body).Decode(&req)
 
 		w.Header().Set("Content-Type", "application/json")
 		if n == 1 {
-			json.NewEncoder(w).Encode(map[string]any{
+			jsonx.NewEncoder(w).Encode(map[string]any{
 				"choices": []map[string]any{
 					{
 						"message": map[string]any{
@@ -213,7 +213,7 @@ func TestContinueWithToolResults(t *testing.T) {
 				}
 			}
 
-			json.NewEncoder(w).Encode(map[string]any{
+			jsonx.NewEncoder(w).Encode(map[string]any{
 				"choices": []map[string]any{
 					{"message": map[string]any{"role": "assistant", "content": "Tokyo is sunny, 25°C."}, "finish_reason": "stop"},
 				},
@@ -261,7 +261,7 @@ func TestComplete_MultiRoundToolCalls(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n := callCount.Add(1)
 		var req chatRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), 400)
 			return
 		}
@@ -269,7 +269,7 @@ func TestComplete_MultiRoundToolCalls(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch n {
 		case 1:
-			json.NewEncoder(w).Encode(map[string]any{
+			jsonx.NewEncoder(w).Encode(map[string]any{
 				"choices": []map[string]any{
 					{"message": map[string]any{"role": "assistant", "tool_calls": []map[string]any{
 						{"id": "call_1", "type": "function", "function": map[string]any{"name": "cmd.list", "arguments": `{}`}},
@@ -283,7 +283,7 @@ func TestComplete_MultiRoundToolCalls(t *testing.T) {
 					round2HasCall1Result = true
 				}
 			}
-			json.NewEncoder(w).Encode(map[string]any{
+			jsonx.NewEncoder(w).Encode(map[string]any{
 				"choices": []map[string]any{
 					{"message": map[string]any{"role": "assistant", "tool_calls": []map[string]any{
 						{"id": "call_2", "type": "function", "function": map[string]any{"name": "cmd.detail", "arguments": `{"id":"pr-42"}`}},
@@ -297,7 +297,7 @@ func TestComplete_MultiRoundToolCalls(t *testing.T) {
 					round3HasCall2Result = true
 				}
 			}
-			json.NewEncoder(w).Encode(map[string]any{
+			jsonx.NewEncoder(w).Encode(map[string]any{
 				"choices": []map[string]any{
 					{"message": map[string]any{"role": "assistant", "content": "PR #42 is a bug fix."}, "finish_reason": "stop"},
 				},
@@ -361,7 +361,7 @@ func TestComplete_APIError(t *testing.T) {
 func TestComplete_ErrorJSON(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"error": map[string]any{"message": "rate limit exceeded"},
 		})
 	}))
@@ -377,7 +377,7 @@ func TestComplete_ErrorJSON(t *testing.T) {
 func TestComplete_EmptyChoices(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"choices": []any{}})
+		jsonx.NewEncoder(w).Encode(map[string]any{"choices": []any{}})
 	}))
 	defer srv.Close()
 
@@ -394,7 +394,7 @@ func TestComplete_MaxToolRoundsExceeded(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n := callCount.Add(1)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "tool_calls": []map[string]any{
 					{"id": "call_" + string(rune('0'+n)), "type": "function", "function": map[string]any{"name": "cmd.loop", "arguments": `{}`}},
@@ -440,7 +440,7 @@ func TestComplete_MaxToolRoundsExceeded(t *testing.T) {
 func TestComplete_UsageParsed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "content": "Hi!"}, "finish_reason": "stop"},
 			},
@@ -487,7 +487,7 @@ func TestComplete_UsageParsed(t *testing.T) {
 func TestComplete_UsageNilWhenMissing(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "content": "Hi!"}, "finish_reason": "stop"},
 			},
@@ -509,7 +509,7 @@ func TestComplete_UsagePartialDetails(t *testing.T) {
 	// Most real-world models return usage without the detail sub-objects
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "content": "Hi!"}, "finish_reason": "stop"},
 			},
@@ -548,7 +548,7 @@ func TestComplete_UsagePartialDetails(t *testing.T) {
 func TestComplete_UsageOnToolCallResponse(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{
 					"message": map[string]any{
@@ -613,7 +613,7 @@ func TestCustomHeaders_Applied(t *testing.T) {
 		gotReferer = r.Header.Get("HTTP-Referer")
 		gotTitle = r.Header.Get("X-OpenRouter-Title")
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "content": "ok"}, "finish_reason": "stop"},
 			},
@@ -645,7 +645,7 @@ func TestCustomHeaders_ReservedBlocked(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotAuth = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "content": "ok"}, "finish_reason": "stop"},
 			},

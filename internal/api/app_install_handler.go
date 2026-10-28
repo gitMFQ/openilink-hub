@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
@@ -43,7 +43,7 @@ func (s *Server) handleListInstallations(w http.ResponseWriter, r *http.Request)
 		w.Write([]byte("[]"))
 		return
 	}
-	json.NewEncoder(w).Encode(installations)
+	jsonx.NewEncoder(w).Encode(installations)
 }
 
 // GET /api/apps/{id}/installations/{iid}
@@ -58,7 +58,7 @@ func (s *Server) handleGetInstallation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(inst)
+	jsonx.NewEncoder(w).Encode(inst)
 }
 
 // PUT /api/apps/{id}/installations/{iid}
@@ -73,11 +73,11 @@ func (s *Server) handleUpdateInstallation(w http.ResponseWriter, r *http.Request
 	}
 
 	var req struct {
-		Handle  *string         `json:"handle"`
-		Config  json.RawMessage `json:"config"`
-		Enabled *bool           `json:"enabled"`
+		Handle  *string          `json:"handle"`
+		Config  jsonx.RawMessage `json:"config"`
+		Enabled *bool            `json:"enabled"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -92,8 +92,8 @@ func (s *Server) handleUpdateInstallation(w http.ResponseWriter, r *http.Request
 		// string instead of a raw object due to a prior frontend bug).
 		cfg = req.Config
 		var raw string
-		if json.Unmarshal(req.Config, &raw) == nil {
-			if unwrapped := json.RawMessage(raw); json.Valid(unwrapped) && len(unwrapped) > 0 && unwrapped[0] == '{' {
+		if jsonx.Unmarshal(req.Config, &raw) == nil {
+			if unwrapped := jsonx.RawMessage(raw); jsonx.Valid(unwrapped) && len(unwrapped) > 0 && unwrapped[0] == '{' {
 				cfg = unwrapped
 			}
 		}
@@ -147,7 +147,7 @@ func (s *Server) handleRegenerateToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"app_token": token})
+	jsonx.NewEncoder(w).Encode(map[string]string{"app_token": token})
 }
 
 // POST /api/apps/{id}/verify-url
@@ -168,7 +168,7 @@ func (s *Server) handleVerifyURL(w http.ResponseWriter, r *http.Request) {
 	challenge := hex.EncodeToString(challengeBytes)
 
 	// Send challenge to the webhook URL
-	payload, _ := json.Marshal(map[string]any{
+	payload, _ := jsonx.Marshal(map[string]any{
 		"v":         1,
 		"type":      "url_verification",
 		"challenge": challenge,
@@ -199,7 +199,7 @@ func (s *Server) handleVerifyURL(w http.ResponseWriter, r *http.Request) {
 	var result struct {
 		Challenge string `json:"challenge"`
 	}
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := jsonx.Unmarshal(body, &result); err != nil {
 		slog.Error("verify-url: invalid response", "app", app.ID, "url", app.WebhookURL, "body", bodyStr, "err", err)
 		jsonError(w, "验证失败：远端返回了无效的响应", http.StatusUnprocessableEntity)
 		return
@@ -217,7 +217,7 @@ func (s *Server) handleVerifyURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "webhook_verified": true})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "webhook_verified": true})
 }
 
 // GET /api/apps/{id}/installations/{iid}/event-logs
@@ -248,7 +248,7 @@ func (s *Server) handleAppEventLogs(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("[]"))
 		return
 	}
-	json.NewEncoder(w).Encode(logs)
+	jsonx.NewEncoder(w).Encode(logs)
 }
 
 // GET /api/apps/{id}/installations/{iid}/api-logs
@@ -279,7 +279,7 @@ func (s *Server) handleAppAPILogs(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("[]"))
 		return
 	}
-	json.NewEncoder(w).Encode(logs)
+	jsonx.NewEncoder(w).Encode(logs)
 }
 
 // GET /api/bots/{id}/apps — list app installations on a bot
@@ -303,7 +303,7 @@ func (s *Server) handleListBotApps(w http.ResponseWriter, r *http.Request) {
 	if installations == nil {
 		installations = []store.AppInstallation{}
 	}
-	json.NewEncoder(w).Encode(installations)
+	jsonx.NewEncoder(w).Encode(installations)
 }
 
 // POST /api/apps/{id}/installations/{iid}/reauthorize
@@ -333,7 +333,7 @@ func (s *Server) notifyAppInstalled(app *store.App, inst *store.AppInstallation)
 	if app.OAuthRedirectURL == "" {
 		return
 	}
-	payload, _ := json.Marshal(map[string]string{
+	payload, _ := jsonx.Marshal(map[string]string{
 		"installation_id": inst.ID,
 		"app_token":       inst.AppToken,
 		"webhook_secret":  app.WebhookSecret,
@@ -362,7 +362,7 @@ func (s *Server) notifyAppInstalled(app *store.App, inst *store.AppInstallation)
 	var result struct {
 		WebhookURL string `json:"webhook_url"`
 	}
-	if err := json.Unmarshal(body, &result); err != nil || result.WebhookURL == "" {
+	if err := jsonx.Unmarshal(body, &result); err != nil || result.WebhookURL == "" {
 		slog.Error("notify: no webhook_url in response", "inst", inst.ID, "body", string(body))
 		return
 	}
@@ -386,11 +386,11 @@ func (s *Server) handleInstallApp(w http.ResponseWriter, r *http.Request) {
 	userID := auth.UserIDFromContext(r.Context())
 
 	var req struct {
-		BotID  string          `json:"bot_id"`
-		Handle string          `json:"handle"`
-		Scopes json.RawMessage `json:"scopes"`
+		BotID  string           `json:"bot_id"`
+		Handle string           `json:"handle"`
+		Scopes jsonx.RawMessage `json:"scopes"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.BotID == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.BotID == "" {
 		jsonError(w, "bot_id required", http.StatusBadRequest)
 		return
 	}
@@ -417,12 +417,12 @@ func (s *Server) handleInstallApp(w http.ResponseWriter, r *http.Request) {
 		scopes = app.Scopes
 	} else {
 		var requested []string
-		if err := json.Unmarshal(scopes, &requested); err != nil {
+		if err := jsonx.Unmarshal(scopes, &requested); err != nil {
 			jsonError(w, "invalid scopes format", http.StatusBadRequest)
 			return
 		}
 		var allowed []string
-		json.Unmarshal(app.Scopes, &allowed)
+		jsonx.Unmarshal(app.Scopes, &allowed)
 		allowedSet := make(map[string]bool, len(allowed))
 		for _, s := range allowed {
 			allowedSet[s] = true
@@ -440,7 +440,7 @@ func (s *Server) handleInstallApp(w http.ResponseWriter, r *http.Request) {
 		oauthRedirectURL := fmt.Sprintf("%s/api/apps/%s/oauth/setup?bot_id=%s", s.Config.RPOrigin, app.ID, req.BotID)
 		slog.Info("install: redirecting to OAuth", "app", app.Slug, "bot", req.BotID)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"needs_oauth":    true,
 			"oauth_redirect": oauthRedirectURL,
 		})
@@ -470,7 +470,7 @@ func (s *Server) handleInstallApp(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(inst)
+	jsonx.NewEncoder(w).Encode(inst)
 }
 
 // autoVerifyURL sends a challenge to verify the app's webhook_url.
@@ -479,7 +479,7 @@ func (s *Server) autoVerifyURL(appID, webhookURL string) {
 	_, _ = rand.Read(challengeBytes)
 	challenge := hex.EncodeToString(challengeBytes)
 
-	payload, _ := json.Marshal(map[string]any{
+	payload, _ := jsonx.Marshal(map[string]any{
 		"v":         1,
 		"type":      "url_verification",
 		"challenge": challenge,
@@ -505,7 +505,7 @@ func (s *Server) autoVerifyURL(appID, webhookURL string) {
 	var result struct {
 		Challenge string `json:"challenge"`
 	}
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := jsonx.Unmarshal(body, &result); err != nil {
 		slog.Error("auto-verify: invalid response", "app", appID, "err", err)
 		return
 	}

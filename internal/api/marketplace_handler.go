@@ -2,8 +2,8 @@ package api
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 
@@ -80,7 +80,7 @@ func (s *Server) handleMarketplace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // GET /api/marketplace/builtin — list all builtin apps
@@ -113,7 +113,7 @@ func (s *Server) handleBuiltinApps(w http.ResponseWriter, r *http.Request) {
 		result = []builtinEntry{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // POST /api/marketplace/sync/{slug} — sync a marketplace app from registry (create or update)
@@ -169,14 +169,14 @@ func (s *Server) handleMarketplaceSync(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(localApp)
+		jsonx.NewEncoder(w).Encode(localApp)
 		return
 	}
 
 	// Already installed and up to date
 	if regApp.Version != "" && regApp.Version == localApp.Version {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(localApp)
+		jsonx.NewEncoder(w).Encode(localApp)
 		return
 	}
 
@@ -209,5 +209,5 @@ func (s *Server) handleMarketplaceSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(localApp)
+	jsonx.NewEncoder(w).Encode(localApp)
 }

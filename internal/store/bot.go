@@ -1,28 +1,28 @@
 package store
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"time"
 )
 
 type Bot struct {
-	ID             string          `json:"id"`
-	UserID         string          `json:"user_id"`
-	Name           string          `json:"name"`
-	DisplayName    string          `json:"display_name"`
-	Provider       string          `json:"provider"`
-	ProviderID     string          `json:"provider_id,omitempty"`
-	Status         string          `json:"status"`
-	Credentials    json.RawMessage `json:"credentials,omitempty"`
-	SyncState      json.RawMessage `json:"-"`
-	MsgCount       int64           `json:"msg_count"`
-	LastMsgAt      *int64          `json:"last_msg_at,omitempty"`
-	ReminderHours  int             `json:"reminder_hours"`
-	LastRemindedAt *int64          `json:"last_reminded_at,omitempty"`
-	CreatedAt      int64           `json:"created_at"`
-	UpdatedAt      int64           `json:"updated_at"`
-	AIEnabled      bool            `json:"ai_enabled"`
-	AIModel        string          `json:"ai_model"`
+	ID             string           `json:"id"`
+	UserID         string           `json:"user_id"`
+	Name           string           `json:"name"`
+	DisplayName    string           `json:"display_name"`
+	Provider       string           `json:"provider"`
+	ProviderID     string           `json:"provider_id,omitempty"`
+	Status         string           `json:"status"`
+	Credentials    jsonx.RawMessage `json:"credentials,omitempty"`
+	SyncState      jsonx.RawMessage `json:"-"`
+	MsgCount       int64            `json:"msg_count"`
+	LastMsgAt      *int64           `json:"last_msg_at,omitempty"`
+	ReminderHours  int              `json:"reminder_hours"`
+	LastRemindedAt *int64           `json:"last_reminded_at,omitempty"`
+	CreatedAt      int64            `json:"created_at"`
+	UpdatedAt      int64            `json:"updated_at"`
+	AIEnabled      bool             `json:"ai_enabled"`
+	AIModel        string           `json:"ai_model"`
 }
 
 type BotStats struct {
@@ -55,17 +55,17 @@ type RecentContact struct {
 }
 
 type BotStore interface {
-	CreateBot(userID, name, provider, providerID string, credentials json.RawMessage) (*Bot, error)
+	CreateBot(userID, name, provider, providerID string, credentials jsonx.RawMessage) (*Bot, error)
 	GetBot(id string) (*Bot, error)
 	ListBotsByUser(userID string) ([]Bot, error)
 	GetAllBots() ([]Bot, error)
 	FindBotByProviderID(provider, providerID string) (*Bot, error)
 	FindBotByCredential(key, value string) (*Bot, error)
-	UpdateBotCredentials(id, providerID string, credentials json.RawMessage) error
+	UpdateBotCredentials(id, providerID string, credentials jsonx.RawMessage) error
 	UpdateBotName(id, name string) error
 	UpdateBotDisplayName(id, displayName string) error
 	UpdateBotStatus(id, status string) error
-	UpdateBotSyncState(id string, syncState json.RawMessage) error
+	UpdateBotSyncState(id string, syncState jsonx.RawMessage) error
 	IncrBotMsgCount(id string) error
 	UpdateBotReminder(id string, hours int) error
 	MarkBotReminded(id string) error

@@ -1,12 +1,12 @@
 package relay
 
-import "encoding/json"
+import "github.com/openilink/openilink-hub/internal/jsonx"
 
 // Envelope is the JSON frame exchanged over WebSocket.
 type Envelope struct {
-	Type  string          `json:"type"`
-	ReqID string          `json:"req_id,omitempty"`
-	Data  json.RawMessage `json:"data,omitempty"`
+	Type  string           `json:"type"`
+	ReqID string           `json:"req_id,omitempty"`
+	Data  jsonx.RawMessage `json:"data,omitempty"`
 }
 
 // --- Server → Client ---
@@ -32,11 +32,11 @@ type InitData struct {
 }
 
 type MessageItem struct {
-	Type     string   `json:"type"` // text, image, voice, file, video
-	Text     string   `json:"text,omitempty"`
-	FileName string   `json:"file_name,omitempty"`
-	Media    *Media   `json:"media,omitempty"`
-	RefMsg   *RefMsg  `json:"ref_msg,omitempty"`
+	Type     string  `json:"type"` // text, image, voice, file, video
+	Text     string  `json:"text,omitempty"`
+	FileName string  `json:"file_name,omitempty"`
+	Media    *Media  `json:"media,omitempty"`
+	RefMsg   *RefMsg `json:"ref_msg,omitempty"`
 }
 
 type Media struct {
@@ -88,7 +88,7 @@ type SendTypingData struct {
 // Helpers to build envelopes
 
 func NewEnvelope(typ string, data any) Envelope {
-	raw, _ := json.Marshal(data)
+	raw, _ := jsonx.Marshal(data)
 	return Envelope{Type: typ, Data: raw}
 }
 

@@ -5,8 +5,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
@@ -47,7 +47,7 @@ func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {
 		Secret string `json:"secret"`
 	}
 	if len(inst.Config) > 0 {
-		if err := json.Unmarshal(inst.Config, &cfg); err != nil {
+		if err := jsonx.Unmarshal(inst.Config, &cfg); err != nil {
 			slog.Error("github: invalid installation config", "installation_id", inst.ID, "err", err)
 			http.Error(w, "invalid installation config", http.StatusInternalServerError)
 			return
@@ -69,7 +69,7 @@ func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload map[string]any
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := jsonx.Unmarshal(body, &payload); err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -143,8 +143,8 @@ func formatGitHubEvent(eventType string, p map[string]any) string {
 			}
 			cm := toMap(c)
 			msg := getString(cm, "message")
-			if idx := strings.Index(msg, "\n"); idx > 0 {
-				msg = msg[:idx]
+			if first, _, ok := strings.Cut(msg, "\n"); ok {
+				msg = first
 			}
 			sha := getString(cm, "id")
 			if len(sha) > 7 {

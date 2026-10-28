@@ -2,14 +2,14 @@ package api
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/openilink/openilink-hub/internal/store"
 	"github.com/openilink/openilink-hub/internal/provider"
 	"github.com/openilink/openilink-hub/internal/relay"
+	"github.com/openilink/openilink-hub/internal/store"
 )
 
 var upgrader = websocket.Upgrader{
@@ -77,13 +77,13 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn.ReadPump() // blocks
 }
 
-func parseRelayItems(itemList json.RawMessage) []relay.MessageItem {
+func parseRelayItems(itemList jsonx.RawMessage) []relay.MessageItem {
 	var items []struct {
 		Type     string `json:"type"`
 		Text     string `json:"text,omitempty"`
 		FileName string `json:"file_name,omitempty"`
 	}
-	json.Unmarshal(itemList, &items)
+	jsonx.Unmarshal(itemList, &items)
 	result := make([]relay.MessageItem, len(items))
 	for i, item := range items {
 		result[i] = relay.MessageItem{Type: item.Type, Text: item.Text, FileName: item.FileName}
@@ -97,7 +97,7 @@ func (s *Server) SetupUpstreamHandler() relay.UpstreamHandler {
 		switch env.Type {
 		case "send_text":
 			var data relay.SendTextData
-			if err := json.Unmarshal(env.Data, &data); err != nil {
+			if err := jsonx.Unmarshal(env.Data, &data); err != nil {
 				conn.Send(relay.NewAck(env.ReqID, false, "", "invalid data"))
 				return
 			}
@@ -119,7 +119,7 @@ func (s *Server) SetupUpstreamHandler() relay.UpstreamHandler {
 				return
 			}
 
-			itemList, _ := json.Marshal([]map[string]any{{"type": "text", "text": data.Text}})
+			itemList, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": data.Text}})
 			s.Store.SaveMessage(&store.Message{
 				BotID:       conn.BotID,
 				Direction:   "outbound",
@@ -131,7 +131,7 @@ func (s *Server) SetupUpstreamHandler() relay.UpstreamHandler {
 
 		case "send_typing":
 			var data relay.SendTypingData
-			if err := json.Unmarshal(env.Data, &data); err != nil {
+			if err := jsonx.Unmarshal(env.Data, &data); err != nil {
 				conn.Send(relay.NewAck(env.ReqID, false, "", "invalid data"))
 				return
 			}
@@ -153,7 +153,7 @@ func (s *Server) SetupUpstreamHandler() relay.UpstreamHandler {
 			var data struct {
 				ContextToken string `json:"context_token"`
 			}
-			if err := json.Unmarshal(env.Data, &data); err != nil {
+			if err := jsonx.Unmarshal(env.Data, &data); err != nil {
 				conn.Send(relay.NewAck(env.ReqID, false, "", "invalid data"))
 				return
 			}

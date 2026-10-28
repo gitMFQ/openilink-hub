@@ -1,6 +1,6 @@
 package store
 
-import "encoding/json"
+import "github.com/openilink/openilink-hub/internal/jsonx"
 
 type Plugin struct {
 	ID              string `json:"id"`
@@ -22,22 +22,22 @@ type Plugin struct {
 }
 
 type PluginVersion struct {
-	ID             string          `json:"id"`
-	PluginID       string          `json:"plugin_id"`
-	Version        string          `json:"version"`
-	Changelog      string          `json:"changelog,omitempty"`
-	Script         string          `json:"script,omitempty"`
-	ConfigSchema   json.RawMessage `json:"config_schema"`
-	GithubURL      string          `json:"github_url,omitempty"`
-	CommitHash     string          `json:"commit_hash,omitempty"`
-	MatchTypes     string          `json:"match_types"`
-	ConnectDomains string          `json:"connect_domains"`
-	GrantPerms     string          `json:"grant_perms"`
-	TimeoutSec     int             `json:"timeout_sec"`
-	Status         string          `json:"status"`
-	RejectReason   string          `json:"reject_reason,omitempty"`
-	ReviewedBy     string          `json:"reviewed_by,omitempty"`
-	CreatedAt      int64           `json:"created_at"`
+	ID             string           `json:"id"`
+	PluginID       string           `json:"plugin_id"`
+	Version        string           `json:"version"`
+	Changelog      string           `json:"changelog,omitempty"`
+	Script         string           `json:"script,omitempty"`
+	ConfigSchema   jsonx.RawMessage `json:"config_schema"`
+	GithubURL      string           `json:"github_url,omitempty"`
+	CommitHash     string           `json:"commit_hash,omitempty"`
+	MatchTypes     string           `json:"match_types"`
+	ConnectDomains string           `json:"connect_domains"`
+	GrantPerms     string           `json:"grant_perms"`
+	TimeoutSec     int              `json:"timeout_sec"`
+	Status         string           `json:"status"`
+	RejectReason   string           `json:"reject_reason,omitempty"`
+	ReviewedBy     string           `json:"reviewed_by,omitempty"`
+	CreatedAt      int64            `json:"created_at"`
 
 	// Joined
 	ReviewerName  string `json:"reviewer_name,omitempty"`
@@ -50,12 +50,12 @@ type PluginVersion struct {
 
 type PluginWithLatest struct {
 	Plugin
-	Version        string          `json:"version,omitempty"`
-	Changelog      string          `json:"changelog,omitempty"`
-	MatchTypes     string          `json:"match_types,omitempty"`
-	ConnectDomains string          `json:"connect_domains,omitempty"`
-	GrantPerms     string          `json:"grant_perms,omitempty"`
-	ConfigSchema   json.RawMessage `json:"config_schema,omitempty"`
+	Version        string           `json:"version,omitempty"`
+	Changelog      string           `json:"changelog,omitempty"`
+	MatchTypes     string           `json:"match_types,omitempty"`
+	ConnectDomains string           `json:"connect_domains,omitempty"`
+	GrantPerms     string           `json:"grant_perms,omitempty"`
+	ConfigSchema   jsonx.RawMessage `json:"config_schema,omitempty"`
 }
 
 type ConfigField struct {

@@ -5,8 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
@@ -123,7 +123,7 @@ func (e *testEnv) newClient() *http.Client {
 
 func (e *testEnv) postRaw(path string, body any) *http.Response {
 	e.t.Helper()
-	data, _ := json.Marshal(body)
+	data, _ := jsonx.Marshal(body)
 	resp, err := e.client.Post(e.srv.URL+path, "application/json", bytes.NewReader(data))
 	if err != nil {
 		e.t.Fatalf("POST %s: %v", path, err)
@@ -136,7 +136,7 @@ func (e *testEnv) postCode(path string, body any) (int, map[string]any) {
 	resp := e.postRaw(path, body)
 	defer resp.Body.Close()
 	var result map[string]any
-	json.NewDecoder(resp.Body).Decode(&result)
+	jsonx.NewDecoder(resp.Body).Decode(&result)
 	return resp.StatusCode, result
 }
 
@@ -154,7 +154,7 @@ func (e *testEnv) get(path string) (int, map[string]any) {
 	}
 	defer resp.Body.Close()
 	var result map[string]any
-	json.NewDecoder(resp.Body).Decode(&result)
+	jsonx.NewDecoder(resp.Body).Decode(&result)
 	return resp.StatusCode, result
 }
 
@@ -166,7 +166,7 @@ func (e *testEnv) getList(path string) (int, []any) {
 	}
 	defer resp.Body.Close()
 	var result []any
-	json.NewDecoder(resp.Body).Decode(&result)
+	jsonx.NewDecoder(resp.Body).Decode(&result)
 	return resp.StatusCode, result
 }
 
@@ -179,13 +179,13 @@ func (e *testEnv) del(path string) (int, map[string]any) {
 	}
 	defer resp.Body.Close()
 	var result map[string]any
-	json.NewDecoder(resp.Body).Decode(&result)
+	jsonx.NewDecoder(resp.Body).Decode(&result)
 	return resp.StatusCode, result
 }
 
 func (e *testEnv) put(path string, body any) (int, map[string]any) {
 	e.t.Helper()
-	data, _ := json.Marshal(body)
+	data, _ := jsonx.Marshal(body)
 	req, _ := http.NewRequest("PUT", e.srv.URL+path, bytes.NewReader(data))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.client.Do(req)
@@ -194,7 +194,7 @@ func (e *testEnv) put(path string, body any) (int, map[string]any) {
 	}
 	defer resp.Body.Close()
 	var result map[string]any
-	json.NewDecoder(resp.Body).Decode(&result)
+	jsonx.NewDecoder(resp.Body).Decode(&result)
 	return resp.StatusCode, result
 }
 
@@ -257,7 +257,7 @@ func readWSTimeout(t *testing.T, ws *websocket.Conn, d time.Duration) map[string
 		return nil
 	}
 	var m map[string]any
-	json.Unmarshal(msg, &m)
+	jsonx.Unmarshal(msg, &m)
 	return m
 }
 
@@ -297,7 +297,7 @@ func httpGetWithHeader(t *testing.T, url, header, value string) *http.Response {
 
 func httpPost(t *testing.T, url string, body any) *http.Response {
 	t.Helper()
-	data, _ := json.Marshal(body)
+	data, _ := jsonx.Marshal(body)
 	req := mustReq(t, "POST", url, bytes.NewReader(data))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
@@ -673,7 +673,7 @@ func TestMessages(t *testing.T) {
 	assertCode(t, "empty messages", code, 200)
 
 	// Save some messages
-	itemList, _ := json.Marshal([]map[string]any{{"type": "text", "text": "hello"}})
+	itemList, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "hello"}})
 	for i := 0; i < 3; i++ {
 		env.db.SaveMessage(&store.Message{
 			BotID: botObj.ID, Direction: "inbound", FromUserID: "user@wechat",
@@ -736,7 +736,7 @@ func TestBotContacts(t *testing.T) {
 	botObj := env.createBotForUser("Bot1")
 
 	// Save inbound messages from different senders
-	contactItems, _ := json.Marshal([]map[string]any{{"type": "text", "text": "hi"}})
+	contactItems, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "hi"}})
 	for _, sender := range []string{"alice@wechat", "bob@wechat", "alice@wechat"} {
 		env.db.SaveMessage(&store.Message{
 			BotID: botObj.ID, Direction: "inbound", FromUserID: sender,
@@ -1357,7 +1357,7 @@ func TestRawMessageStored(t *testing.T) {
 	}
 
 	var raw map[string]any
-	json.Unmarshal(*msg.Raw, &raw)
+	jsonx.Unmarshal(*msg.Raw, &raw)
 
 	// Mockserver serializes the WeixinMessage as raw
 	if raw["from_user_id"] != "u@wx" {
@@ -1402,7 +1402,7 @@ func TestRawMessageWithCustomData(t *testing.T) {
 	}
 
 	var raw map[string]any
-	json.Unmarshal(*msgs[0].Raw, &raw)
+	jsonx.Unmarshal(*msgs[0].Raw, &raw)
 
 	// Raw is auto-generated from the WeixinMessage
 	if raw["from_user_id"] != "u@wx" {
@@ -1503,12 +1503,12 @@ func TestChannelContextFullIsolation(t *testing.T) {
 	readWSTimeout(t, ws2, 2*time.Second)
 
 	// Add outbound (stored globally, no channel_id)
-	r1Items, _ := json.Marshal([]map[string]any{{"type": "text", "text": "support reply"}})
+	r1Items, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "support reply"}})
 	env.db.SaveMessage(&store.Message{
 		BotID: botObj.ID, Direction: "outbound",
 		ToUserID: "u@wx", MessageType: 2, ItemList: r1Items,
 	})
-	r2Items, _ := json.Marshal([]map[string]any{{"type": "text", "text": "sales reply"}})
+	r2Items, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "sales reply"}})
 	env.db.SaveMessage(&store.Message{
 		BotID: botObj.ID, Direction: "outbound",
 		ToUserID: "u@wx", MessageType: 2, ItemList: r2Items,
@@ -1540,7 +1540,7 @@ func TestChannelHTTPStatus(t *testing.T) {
 	defer resp.Body.Close()
 	assertCode(t, "channel status", resp.StatusCode, 200)
 	var status map[string]any
-	json.NewDecoder(resp.Body).Decode(&status)
+	jsonx.NewDecoder(resp.Body).Decode(&status)
 	if status["bot_status"] != "connected" {
 		t.Errorf("bot_status = %v", status["bot_status"])
 	}
@@ -1581,7 +1581,7 @@ func TestChannelHTTPMessages(t *testing.T) {
 	botObj := env.createBotForUser("Bot1")
 	ch, _ := env.db.CreateChannel(botObj.ID, "MsgChan", "", nil, nil)
 
-	paginationItems, _ := json.Marshal([]map[string]any{{"type": "text", "text": "hello"}})
+	paginationItems, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "hello"}})
 	for i := 0; i < 5; i++ {
 		env.db.SaveMessage(&store.Message{
 			BotID: botObj.ID, Direction: "inbound", FromUserID: "u@wx",
@@ -1594,7 +1594,7 @@ func TestChannelHTTPMessages(t *testing.T) {
 	defer resp.Body.Close()
 	assertCode(t, "channel messages", resp.StatusCode, 200)
 	var page1 map[string]any
-	json.NewDecoder(resp.Body).Decode(&page1)
+	jsonx.NewDecoder(resp.Body).Decode(&page1)
 	msgs := page1["messages"].([]any)
 	if len(msgs) != 3 {
 		t.Fatalf("want 3 messages, got %d", len(msgs))
@@ -1608,7 +1608,7 @@ func TestChannelHTTPMessages(t *testing.T) {
 	resp2 := httpGet(t, env.srv.URL+"/api/v1/channels/messages?key="+ch.APIKey+"&cursor="+cursor+"&limit=3")
 	defer resp2.Body.Close()
 	var page2 map[string]any
-	json.NewDecoder(resp2.Body).Decode(&page2)
+	jsonx.NewDecoder(resp2.Body).Decode(&page2)
 	msgs2 := page2["messages"].([]any)
 	if len(msgs2) != 2 {
 		t.Errorf("want 2 remaining messages, got %d", len(msgs2))
@@ -1639,7 +1639,7 @@ func TestChannelHTTPSend(t *testing.T) {
 	defer resp.Body.Close()
 	assertCode(t, "channel send", resp.StatusCode, 200)
 	var result map[string]any
-	json.NewDecoder(resp.Body).Decode(&result)
+	jsonx.NewDecoder(resp.Body).Decode(&result)
 	if result["ok"] != true {
 		t.Errorf("ok = %v", result["ok"])
 	}
@@ -1709,7 +1709,7 @@ func TestWebhookDelivery(t *testing.T) {
 	hookSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedHeaders = r.Header
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		jsonx.NewDecoder(r.Body).Decode(&body)
 		received = append(received, body)
 		w.WriteHeader(200)
 	}))
@@ -1843,7 +1843,7 @@ function onRequest(ctx) {
 	}
 
 	var body map[string]any
-	json.Unmarshal([]byte(receivedBody), &body)
+	jsonx.Unmarshal([]byte(receivedBody), &body)
 	if body["text"] != "alice@wx: script test" {
 		t.Errorf("body = %v", body)
 	}
@@ -2047,24 +2047,24 @@ func TestAIContextIsolation(t *testing.T) {
 	sender := "user@wechat"
 
 	// Inbound stored globally (no channel_id)
-	items1, _ := json.Marshal([]map[string]any{{"type": "text", "text": "help me"}})
+	items1, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "help me"}})
 	env.db.SaveMessage(&store.Message{
 		BotID: botObj.ID, Direction: "inbound",
 		FromUserID: sender, MessageType: 1, ItemList: items1,
 	})
-	items2, _ := json.Marshal([]map[string]any{{"type": "text", "text": "price?"}})
+	items2, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "price?"}})
 	env.db.SaveMessage(&store.Message{
 		BotID: botObj.ID, Direction: "inbound",
 		FromUserID: sender, MessageType: 1, ItemList: items2,
 	})
 
 	// Outbound replies (stored globally, no channel_id)
-	reply1, _ := json.Marshal([]map[string]any{{"type": "text", "text": "support reply"}})
+	reply1, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "support reply"}})
 	env.db.SaveMessage(&store.Message{
 		BotID: botObj.ID, Direction: "outbound",
 		ToUserID: sender, MessageType: 2, ItemList: reply1,
 	})
-	reply2, _ := json.Marshal([]map[string]any{{"type": "text", "text": "sales reply"}})
+	reply2, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": "sales reply"}})
 	env.db.SaveMessage(&store.Message{
 		BotID: botObj.ID, Direction: "outbound",
 		ToUserID: sender, MessageType: 2, ItemList: reply2,
@@ -2131,14 +2131,14 @@ func TestMediaStorageAndProxy(t *testing.T) {
 	client := &http.Client{Jar: jar}
 
 	// Register and login
-	data, _ := json.Marshal(map[string]string{"username": "mediauser", "password": "password123"})
+	data, _ := jsonx.Marshal(map[string]string{"username": "mediauser", "password": "password123"})
 	resp, _ := client.Post(ts.URL+"/api/auth/register", "application/json", bytes.NewReader(data))
 	resp.Body.Close()
 
 	// Get user ID
 	resp, _ = client.Get(ts.URL + "/api/me")
 	var me map[string]any
-	json.NewDecoder(resp.Body).Decode(&me)
+	jsonx.NewDecoder(resp.Body).Decode(&me)
 	resp.Body.Close()
 	userID := me["id"].(string)
 
@@ -2177,7 +2177,7 @@ func TestMediaStorageAndProxy(t *testing.T) {
 	}
 
 	var mediaKeys map[string]string
-	json.Unmarshal(msgs[0].MediaKeys, &mediaKeys)
+	jsonx.Unmarshal(msgs[0].MediaKeys, &mediaKeys)
 	mediaKey := mediaKeys["0"]
 	if mediaKey == "" {
 		t.Fatalf("media_keys[0] not found: %s", string(msgs[0].MediaKeys))
@@ -2312,10 +2312,10 @@ function onResponse(ctx) {
 	var received []map[string]any
 	hookSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		jsonx.NewDecoder(r.Body).Decode(&body)
 		received = append(received, body)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"reply": "auto-reply"})
+		jsonx.NewEncoder(w).Encode(map[string]string{"reply": "auto-reply"})
 	}))
 	defer hookSrv.Close()
 
@@ -2561,7 +2561,7 @@ function onRequest(ctx) {
 	var received []map[string]any
 	hookSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		jsonx.NewDecoder(r.Body).Decode(&body)
 		received = append(received, body)
 		w.WriteHeader(200)
 	}))
@@ -2661,7 +2661,7 @@ func TestAIToolImageReply(t *testing.T) {
 	// --- Mock app server (returns image on tool call) ---
 	appSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"reply":        "Here is the chart",
 			"reply_type":   "image",
 			"reply_base64": "data:image/png;base64," + pngBase64,
@@ -2677,17 +2677,17 @@ func TestAIToolImageReply(t *testing.T) {
 
 	llmSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
-			Messages []json.RawMessage `json:"messages"`
-			Tools    []json.RawMessage `json:"tools"`
+			Messages []jsonx.RawMessage `json:"messages"`
+			Tools    []jsonx.RawMessage `json:"tools"`
 		}
-		json.NewDecoder(r.Body).Decode(&req)
+		jsonx.NewDecoder(r.Body).Decode(&req)
 		llmCallCount.Add(1)
 
 		w.Header().Set("Content-Type", "application/json")
 
 		if llmCallCount.Load() == 1 {
 			// First call: return tool_call
-			json.NewEncoder(w).Encode(map[string]any{
+			jsonx.NewEncoder(w).Encode(map[string]any{
 				"choices": []map[string]any{{
 					"message": map[string]any{
 						"role": "assistant",
@@ -2712,12 +2712,12 @@ func TestAIToolImageReply(t *testing.T) {
 				Role    string `json:"role"`
 				Content any    `json:"content"`
 			}
-			json.Unmarshal(raw, &msg)
+			jsonx.Unmarshal(raw, &msg)
 			if msg.Role == "user" {
 				// Check if content is array (multimodal) vs string
 				var contentArr []map[string]any
-				contentBytes, _ := json.Marshal(msg.Content)
-				if json.Unmarshal(contentBytes, &contentArr) == nil && len(contentArr) > 0 {
+				contentBytes, _ := jsonx.Marshal(msg.Content)
+				if jsonx.Unmarshal(contentBytes, &contentArr) == nil && len(contentArr) > 0 {
 					for _, part := range contentArr {
 						if part["type"] == "image_url" {
 							gotMultimodalUserImage.Store(true)
@@ -2727,7 +2727,7 @@ func TestAIToolImageReply(t *testing.T) {
 			}
 		}
 
-		json.NewEncoder(w).Encode(map[string]any{
+		jsonx.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{{
 				"message": map[string]any{
 					"role":    "assistant",
@@ -2766,12 +2766,12 @@ func TestAIToolImageReply(t *testing.T) {
 	// Create user + bot
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{Jar: jar}
-	body, _ := json.Marshal(map[string]string{"username": "imguser", "password": "password123"})
+	body, _ := jsonx.Marshal(map[string]string{"username": "imguser", "password": "password123"})
 	resp, _ := client.Post(ts.URL+"/api/auth/register", "application/json", bytes.NewReader(body))
 	resp.Body.Close()
 	resp, _ = client.Get(ts.URL + "/api/me")
 	var me map[string]any
-	json.NewDecoder(resp.Body).Decode(&me)
+	jsonx.NewDecoder(resp.Body).Decode(&me)
 	resp.Body.Close()
 	userID := me["id"].(string)
 
@@ -2779,10 +2779,10 @@ func TestAIToolImageReply(t *testing.T) {
 	db.UpdateBotAIEnabled(botObj.ID, true)
 
 	// Create app with a tool
-	tools, _ := json.Marshal([]store.AppTool{{
+	tools, _ := jsonx.Marshal([]store.AppTool{{
 		Name:        "generate_chart",
 		Description: "Generate a chart image",
-		Parameters:  json.RawMessage(`{"type":"object","properties":{"metric":{"type":"string"}}}`),
+		Parameters:  jsonx.RawMessage(`{"type":"object","properties":{"metric":{"type":"string"}}}`),
 	}})
 	app, err := db.CreateApp(&store.App{
 		OwnerID:       userID,
@@ -2882,7 +2882,7 @@ func TestAppEventDelivery_HTTPAndWebSocket(t *testing.T) {
 	hookSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		webhookCalls.Add(1)
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		jsonx.NewDecoder(r.Body).Decode(&body)
 		webhookMu.Lock()
 		lastWebhookBody = body
 		webhookMu.Unlock()
@@ -2902,9 +2902,9 @@ func TestAppEventDelivery_HTTPAndWebSocket(t *testing.T) {
 		OwnerID:    uid,
 		Name:       "DeliveryApp",
 		Slug:       "delivery-app-inttest",
-		Events:     json.RawMessage(`["message"]`),
-		Scopes:     json.RawMessage(`["message:read","message:write"]`),
-		Tools:      json.RawMessage(`[]`),
+		Events:     jsonx.RawMessage(`["message"]`),
+		Scopes:     jsonx.RawMessage(`["message:read","message:write"]`),
+		Tools:      jsonx.RawMessage(`[]`),
 		WebhookURL: hookSrv.URL,
 	})
 	if err != nil {
@@ -2978,7 +2978,7 @@ func TestAppEventDelivery_HTTPAndWebSocket(t *testing.T) {
 	}
 	ws.SetReadDeadline(time.Time{})
 	var initMsg map[string]any
-	if err := json.Unmarshal(initRaw, &initMsg); err != nil {
+	if err := jsonx.Unmarshal(initRaw, &initMsg); err != nil {
 		t.Fatalf("ws: unmarshal init: %v", err)
 	}
 	if initMsg["type"] != "init" {
@@ -3001,7 +3001,7 @@ func TestAppEventDelivery_HTTPAndWebSocket(t *testing.T) {
 	}
 
 	var envelope map[string]any
-	if err := json.Unmarshal(raw, &envelope); err != nil {
+	if err := jsonx.Unmarshal(raw, &envelope); err != nil {
 		t.Fatalf("phase 2: unmarshal ws envelope: %v", err)
 	}
 	if envelope["type"] != "event" {

@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"strings"
 	"time"
 
@@ -28,13 +28,13 @@ func scanBot(scanner interface{ Scan(...any) error }) (*store.Bot, error) {
 	return b, nil
 }
 
-func (db *DB) CreateBot(userID, name, provider, providerID string, credentials json.RawMessage) (*store.Bot, error) {
+func (db *DB) CreateBot(userID, name, provider, providerID string, credentials jsonx.RawMessage) (*store.Bot, error) {
 	id := uuid.New().String()
 	if name == "" {
 		name = "Bot-" + id[:8]
 	}
 	if credentials == nil {
-		credentials = json.RawMessage(`{}`)
+		credentials = jsonx.RawMessage(`{}`)
 	}
 	_, err := db.Exec(
 		`INSERT INTO bots (id, user_id, name, provider, provider_id, status, credentials)
@@ -98,7 +98,7 @@ func (db *DB) FindBotByCredential(key, value string) (*store.Bot, error) {
 		"SELECT "+botSelectCols+" FROM bots WHERE credentials->>$1 = $2", key, value))
 }
 
-func (db *DB) UpdateBotCredentials(id, providerID string, credentials json.RawMessage) error {
+func (db *DB) UpdateBotCredentials(id, providerID string, credentials jsonx.RawMessage) error {
 	now := db.now()
 	_, err := db.Exec(
 		"UPDATE bots SET credentials = $1, provider_id = $2, status = 'connected', sync_state = '{}', updated_at = $3 WHERE id = $4",
@@ -125,7 +125,7 @@ func (db *DB) UpdateBotStatus(id, status string) error {
 	return err
 }
 
-func (db *DB) UpdateBotSyncState(id string, syncState json.RawMessage) error {
+func (db *DB) UpdateBotSyncState(id string, syncState jsonx.RawMessage) error {
 	_, err := db.Exec("UPDATE bots SET sync_state = $1, updated_at = $2 WHERE id = $3", syncState, db.now(), id)
 	return err
 }

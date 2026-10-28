@@ -5,8 +5,8 @@ package storetest
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"testing"
 	"time"
 
@@ -46,7 +46,7 @@ func mustCreateUser(t *testing.T, s store.Store, username, displayName string) *
 
 func mustCreateBot(t *testing.T, s store.Store, userID, name string) *store.Bot {
 	t.Helper()
-	b, err := s.CreateBot(userID, name, "test", "", json.RawMessage(`{"token":"abc"}`))
+	b, err := s.CreateBot(userID, name, "test", "", jsonx.RawMessage(`{"token":"abc"}`))
 	if err != nil {
 		t.Fatalf("CreateBot(%q): %v", name, err)
 	}
@@ -296,7 +296,7 @@ func TestBotCRUD(t *testing.T, s store.Store) {
 	})
 
 	t.Run("FindBotByProviderID", func(t *testing.T) {
-		b, err := s.CreateBot(u.ID, "ProvBot", "wechat", "wx_123", json.RawMessage(`{}`))
+		b, err := s.CreateBot(u.ID, "ProvBot", "wechat", "wx_123", jsonx.RawMessage(`{}`))
 		if err != nil {
 			t.Fatalf("CreateBot: %v", err)
 		}
@@ -310,7 +310,7 @@ func TestBotCRUD(t *testing.T, s store.Store) {
 	})
 
 	t.Run("FindBotByCredential", func(t *testing.T) {
-		creds := json.RawMessage(`{"api_key":"secret_123"}`)
+		creds := jsonx.RawMessage(`{"api_key":"secret_123"}`)
 		b, err := s.CreateBot(u.ID, "CredBot", "test", "", creds)
 		if err != nil {
 			t.Fatalf("CreateBot: %v", err)
@@ -327,7 +327,7 @@ func TestBotCRUD(t *testing.T, s store.Store) {
 	t.Run("UpdateBotCredentials", func(t *testing.T) {
 		bots, _ := s.ListBotsByUser(u.ID)
 		b := bots[0]
-		newCreds := json.RawMessage(`{"token":"new_token"}`)
+		newCreds := jsonx.RawMessage(`{"token":"new_token"}`)
 		if err := s.UpdateBotCredentials(b.ID, "new_pid", newCreds); err != nil {
 			t.Fatalf("UpdateBotCredentials: %v", err)
 		}
@@ -380,13 +380,13 @@ func TestBotCRUD(t *testing.T, s store.Store) {
 	t.Run("UpdateBotSyncState", func(t *testing.T) {
 		bots, _ := s.ListBotsByUser(u.ID)
 		b := bots[0]
-		state := json.RawMessage(`{"cursor":"abc"}`)
+		state := jsonx.RawMessage(`{"cursor":"abc"}`)
 		if err := s.UpdateBotSyncState(b.ID, state); err != nil {
 			t.Fatalf("UpdateBotSyncState: %v", err)
 		}
 		got, _ := s.GetBot(b.ID)
 		var m map[string]string
-		json.Unmarshal(got.SyncState, &m)
+		jsonx.Unmarshal(got.SyncState, &m)
 		if m["cursor"] != "abc" {
 			t.Errorf("sync_state cursor = %q, want %q", m["cursor"], "abc")
 		}
@@ -539,7 +539,7 @@ func TestMessageCRUD(t *testing.T, s store.Store) {
 			ToUserID:     "recv1",
 			MessageType:  1,
 			ContextToken: "ctx_token_1",
-			ItemList:     json.RawMessage(`[{"type":"text"}]`),
+			ItemList:     jsonx.RawMessage(`[{"type":"text"}]`),
 		}
 		res, err := s.SaveMessage(m)
 		if err != nil {
@@ -563,7 +563,7 @@ func TestMessageCRUD(t *testing.T, s store.Store) {
 			FromUserID:   "sender1",
 			MessageState: 2,
 			ContextToken: "ctx_token_1",
-			ItemList:     json.RawMessage(`[{"type":"text","content":"updated"}]`),
+			ItemList:     jsonx.RawMessage(`[{"type":"text","content":"updated"}]`),
 		}
 		res, err := s.SaveMessage(m)
 		if err != nil {
@@ -702,7 +702,7 @@ func TestMessageCRUD(t *testing.T, s store.Store) {
 			FromUserID:  "sender1",
 			MediaStatus: "downloading",
 		})
-		err := s.UpdateMediaStatus(b.ID, "ready", json.RawMessage(`{"key":"val"}`))
+		err := s.UpdateMediaStatus(b.ID, "ready", jsonx.RawMessage(`{"key":"val"}`))
 		if err != nil {
 			t.Fatalf("UpdateMediaStatus: %v", err)
 		}
@@ -717,7 +717,7 @@ func TestMessageCRUD(t *testing.T, s store.Store) {
 			FromUserID:  "sender1",
 			MediaStatus: "downloading",
 		})
-		err := s.UpdateMediaStatusByID(res.ID, "ready", json.RawMessage(`{"k":"v"}`))
+		err := s.UpdateMediaStatusByID(res.ID, "ready", jsonx.RawMessage(`{"k":"v"}`))
 		if err != nil {
 			t.Fatalf("UpdateMediaStatusByID: %v", err)
 		}
@@ -770,7 +770,7 @@ func TestMessageCRUD(t *testing.T, s store.Store) {
 		if err != nil {
 			t.Fatalf("SaveMessage: %v", err)
 		}
-		payload := json.RawMessage(`{"media_status":"ready","media_key":"test.jpg"}`)
+		payload := jsonx.RawMessage(`{"media_status":"ready","media_key":"test.jpg"}`)
 		if err := s.UpdateMessagePayload(res.ID, payload); err != nil {
 			t.Fatalf("UpdateMessagePayload: %v", err)
 		}
@@ -798,7 +798,7 @@ func TestMessageCRUD(t *testing.T, s store.Store) {
 				t.Fatalf("SaveMessage: %v", err)
 			}
 		}
-		payload := json.RawMessage(`{"media_status":"ready","media_key":"test.jpg"}`)
+		payload := jsonx.RawMessage(`{"media_status":"ready","media_key":"test.jpg"}`)
 		if err := s.UpdateMediaPayloads(b.ID, "", payload); err != nil {
 			t.Fatalf("UpdateMediaPayloads: %v", err)
 		}
@@ -1067,7 +1067,7 @@ func TestAppCRUD(t *testing.T, s store.Store) {
 	t.Run("UpdateApp", func(t *testing.T) {
 		err := s.UpdateApp(appID, "Updated App", "new desc", "icon", "http://icon.png",
 			"http://home.com", "http://setup.com", "http://redirect.com", "{}",
-			"", "", "", json.RawMessage(`[{"name":"tool1"}]`), json.RawMessage(`["msg"]`), json.RawMessage(`["read"]`))
+			"", "", "", jsonx.RawMessage(`[{"name":"tool1"}]`), jsonx.RawMessage(`["msg"]`), jsonx.RawMessage(`["read"]`))
 		if err != nil {
 			t.Fatalf("UpdateApp: %v", err)
 		}
@@ -1220,8 +1220,8 @@ func TestAppCRUD(t *testing.T, s store.Store) {
 	})
 
 	t.Run("UpdateInstallation", func(t *testing.T) {
-		cfg := json.RawMessage(`{"key":"val"}`)
-		scopes := json.RawMessage(`["message:read"]`)
+		cfg := jsonx.RawMessage(`{"key":"val"}`)
+		scopes := jsonx.RawMessage(`["message:read"]`)
 		if err := s.UpdateInstallation(instID, "myhandle", cfg, scopes, false); err != nil {
 			t.Fatalf("UpdateInstallation: %v", err)
 		}
@@ -1404,7 +1404,7 @@ func TestPluginCRUD(t *testing.T, s store.Store) {
 			Version:        "1.0.0",
 			Changelog:      "Initial release",
 			Script:         "console.log('hello')",
-			ConfigSchema:   json.RawMessage(`[]`),
+			ConfigSchema:   jsonx.RawMessage(`[]`),
 			MatchTypes:     "*",
 			ConnectDomains: "*",
 			GrantPerms:     "",
@@ -1474,7 +1474,7 @@ func TestPluginCRUD(t *testing.T, s store.Store) {
 			Version:        "1.0.1",
 			Changelog:      "Bugfix",
 			Script:         "console.log('fixed')",
-			ConfigSchema:   json.RawMessage(`[]`),
+			ConfigSchema:   jsonx.RawMessage(`[]`),
 			MatchTypes:     "*",
 			ConnectDomains: "*",
 			GrantPerms:     "",
@@ -1546,7 +1546,7 @@ func TestPluginCRUD(t *testing.T, s store.Store) {
 			PluginID:     pluginID,
 			Version:      "2.0.0",
 			Script:       "v2",
-			ConfigSchema: json.RawMessage(`[]`),
+			ConfigSchema: jsonx.RawMessage(`[]`),
 			MatchTypes:   "*",
 		})
 		s.SupersedeNonApprovedVersions(pluginID)
@@ -1561,7 +1561,7 @@ func TestPluginCRUD(t *testing.T, s store.Store) {
 			PluginID:     pluginID,
 			Version:      "3.0.0",
 			Script:       "v3",
-			ConfigSchema: json.RawMessage(`[]`),
+			ConfigSchema: jsonx.RawMessage(`[]`),
 			MatchTypes:   "*",
 		})
 		if err := s.CancelPluginVersion(v3.ID); err != nil {
@@ -1598,7 +1598,7 @@ func TestPluginCRUD(t *testing.T, s store.Store) {
 			PluginID:     pluginID,
 			Version:      "4.0.0",
 			Script:       "v4",
-			ConfigSchema: json.RawMessage(`[]`),
+			ConfigSchema: jsonx.RawMessage(`[]`),
 			MatchTypes:   "*",
 		})
 		if err := s.DeletePluginVersion(v4.ID); err != nil {
@@ -1623,7 +1623,7 @@ func TestPluginCRUD(t *testing.T, s store.Store) {
 			PluginID:     pluginID,
 			Version:      "9.0.0",
 			Script:       "pending script",
-			ConfigSchema: json.RawMessage(`[]`),
+			ConfigSchema: jsonx.RawMessage(`[]`),
 			MatchTypes:   "*",
 		})
 		if err != nil {
@@ -1664,8 +1664,8 @@ func TestTraceCRUD(t *testing.T, s store.Store) {
 	rootSpanID := "root0001"
 
 	t.Run("InsertSpan", func(t *testing.T) {
-		attrsJSON, _ := json.Marshal(map[string]any{"key": "val"})
-		eventsJSON, _ := json.Marshal([]store.SpanEvent{})
+		attrsJSON, _ := jsonx.Marshal(map[string]any{"key": "val"})
+		eventsJSON, _ := jsonx.Marshal([]store.SpanEvent{})
 		err := s.InsertSpan(traceID, rootSpanID, "", "root-span", "server", "ok", "",
 			1000, 2000, attrsJSON, eventsJSON, b.ID)
 		if err != nil {
@@ -1738,7 +1738,7 @@ func TestCredentialCRUD(t *testing.T, s store.Store) {
 		c := &store.Credential{
 			ID:              "cred_001",
 			UserID:          u.ID,
-			PublicKey:        []byte("pubkey123"),
+			PublicKey:       []byte("pubkey123"),
 			AttestationType: "none",
 			Transport:       "usb",
 			SignCount:       0,

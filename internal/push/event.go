@@ -1,6 +1,6 @@
 package push
 
-import "encoding/json"
+import "github.com/openilink/openilink-hub/internal/jsonx"
 
 // Event types pushed to browser clients.
 const (
@@ -12,8 +12,8 @@ const (
 
 // Envelope is the JSON frame sent over the push WebSocket.
 type Envelope struct {
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data,omitempty"`
+	Type string           `json:"type"`
+	Data jsonx.RawMessage `json:"data,omitempty"`
 }
 
 // BotEvent is the common payload for bot-scoped push events.
@@ -24,7 +24,7 @@ type BotEvent struct {
 
 // NewEnvelope builds an Envelope from a type and any marshalable data.
 func NewEnvelope(typ string, data any) Envelope {
-	raw, _ := json.Marshal(data)
+	raw, _ := jsonx.Marshal(data)
 	return Envelope{Type: typ, Data: raw}
 }
 

@@ -3,8 +3,8 @@ package sqlite
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"strings"
 
 	"github.com/google/uuid"
@@ -29,9 +29,9 @@ func scanChannel(scanner interface{ Scan(...any) error }) (*store.Channel, error
 	if err != nil {
 		return nil, err
 	}
-	_ = json.Unmarshal(filterJSON, &c.FilterRule)
-	_ = json.Unmarshal(aiJSON, &c.AIConfig)
-	_ = json.Unmarshal(webhookJSON, &c.WebhookConfig)
+	_ = jsonx.Unmarshal(filterJSON, &c.FilterRule)
+	_ = jsonx.Unmarshal(aiJSON, &c.AIConfig)
+	_ = jsonx.Unmarshal(webhookJSON, &c.WebhookConfig)
 	return c, nil
 }
 
@@ -44,8 +44,8 @@ func (db *DB) CreateChannel(botID, name, handle string, filter *store.FilterRule
 	if ai == nil {
 		ai = &store.AIConfig{}
 	}
-	filterJSON, _ := json.Marshal(filter)
-	aiJSON, _ := json.Marshal(ai)
+	filterJSON, _ := jsonx.Marshal(filter)
+	aiJSON, _ := jsonx.Marshal(ai)
 	_, err := db.Exec(
 		"INSERT INTO channels (id, bot_id, name, handle, ai_config, api_key, filter_rule) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		id, botID, name, handle, aiJSON, apiKey, filterJSON,
@@ -112,9 +112,9 @@ func (db *DB) ListChannelsByBotIDs(botIDs []string) ([]store.Channel, error) {
 }
 
 func (db *DB) UpdateChannel(id, name, handle string, filter *store.FilterRule, ai *store.AIConfig, webhook *store.WebhookConfig, enabled bool) error {
-	filterJSON, _ := json.Marshal(filter)
-	aiJSON, _ := json.Marshal(ai)
-	webhookJSON, _ := json.Marshal(webhook)
+	filterJSON, _ := jsonx.Marshal(filter)
+	aiJSON, _ := jsonx.Marshal(ai)
+	webhookJSON, _ := jsonx.Marshal(webhook)
 	_, err := db.Exec(
 		`UPDATE channels SET name = ?, handle = ?, filter_rule = ?, ai_config = ?,
 		 webhook_config = ?, enabled = ?, updated_at = ? WHERE id = ?`,

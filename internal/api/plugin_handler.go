@@ -1,8 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/openilink/openilink-hub/internal/auth"
-	"github.com/openilink/openilink-hub/internal/store"
 	"github.com/openilink/openilink-hub/internal/sink"
+	"github.com/openilink/openilink-hub/internal/store"
 )
 
 // POST /api/webhook-plugins/submit
@@ -23,7 +23,7 @@ func (s *Server) handleSubmitPlugin(w http.ResponseWriter, r *http.Request) {
 		GithubURL string `json:"github_url"`
 		Script    string `json:"script"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -87,7 +87,7 @@ func (s *Server) handleSubmitPlugin(w http.ResponseWriter, r *http.Request) {
 	plugin.Namespace = meta.Namespace
 	s.Store.UpdatePluginMeta(plugin.ID, plugin)
 
-	configSchema, _ := json.Marshal(meta.Config)
+	configSchema, _ := jsonx.Marshal(meta.Config)
 
 	// Cancel all non-approved versions (pending/rejected → superseded)
 	s.Store.SupersedeNonApprovedVersions(plugin.ID)
@@ -106,7 +106,7 @@ func (s *Server) handleSubmitPlugin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"plugin_id": plugin.ID, "version_id": ver.ID, "status": "pending"})
+	jsonx.NewEncoder(w).Encode(map[string]any{"plugin_id": plugin.ID, "version_id": ver.ID, "status": "pending"})
 }
 
 // POST /api/webhook-plugins/{id}/versions/{vid}/cancel
@@ -155,7 +155,7 @@ func (s *Server) handleListPlugins(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(versions)
+		jsonx.NewEncoder(w).Encode(versions)
 		return
 	}
 
@@ -167,7 +167,7 @@ func (s *Server) handleListPlugins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(plugins)
+	jsonx.NewEncoder(w).Encode(plugins)
 }
 
 // GET /api/webhook-plugins/{id} — get plugin detail
@@ -186,7 +186,7 @@ func (s *Server) handleGetPlugin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"plugin":         plugin,
 		"latest_version": latestVersion,
 	})
@@ -201,7 +201,7 @@ func (s *Server) handlePluginVersions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(versions)
+	jsonx.NewEncoder(w).Encode(versions)
 }
 
 // PUT /api/admin/webhook-plugins/{id}/review — review a version
@@ -213,7 +213,7 @@ func (s *Server) handleReviewPlugin(w http.ResponseWriter, r *http.Request) {
 		Status string `json:"status"`
 		Reason string `json:"reason"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -258,7 +258,7 @@ func (s *Server) handleInstallPlugin(w http.ResponseWriter, r *http.Request) {
 	s.Store.RecordPluginInstall(pluginID, userID)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"plugin_id":  pluginID,
 		"version_id": ver.ID,
 		"version":    ver.Version,
@@ -281,7 +281,7 @@ func (s *Server) handleInstallPluginToChannel(w http.ResponseWriter, r *http.Req
 		BotID     string `json:"bot_id"`
 		ChannelID string `json:"channel_id"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.BotID == "" || req.ChannelID == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.BotID == "" || req.ChannelID == "" {
 		jsonError(w, "bot_id and channel_id required", http.StatusBadRequest)
 		return
 	}
@@ -315,7 +315,7 @@ func (s *Server) handleInstallPluginToChannel(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"ok": true, "plugin_id": pluginID, "version_id": plugin.LatestVersionID, "plugin_version": versionStr,
 	})
 }
@@ -329,7 +329,7 @@ func (s *Server) handleMyPlugins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(plugins)
+	jsonx.NewEncoder(w).Encode(plugins)
 }
 
 // POST /api/webhook-plugins/debug/request
@@ -343,14 +343,14 @@ func (s *Server) handleDebugRequest(w http.ResponseWriter, r *http.Request) {
 			MsgType string `json:"msg_type"`
 		} `json:"mock_message"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Script == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Script == "" {
 		jsonError(w, "script required", http.StatusBadRequest)
 		return
 	}
 	msg := sink.MockPayload(req.MockMessage.Sender, req.MockMessage.Content, req.MockMessage.MsgType)
 	result := sink.DebugRequest(req.Script, msg, req.WebhookURL)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // POST /api/webhook-plugins/debug/response
@@ -368,7 +368,7 @@ func (s *Server) handleDebugResponse(w http.ResponseWriter, r *http.Request) {
 			Body    string            `json:"body"`
 		} `json:"response"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Script == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Script == "" {
 		jsonError(w, "script required", http.StatusBadRequest)
 		return
 	}
@@ -377,7 +377,7 @@ func (s *Server) handleDebugResponse(w http.ResponseWriter, r *http.Request) {
 		Status: req.Response.Status, Headers: req.Response.Headers, Body: req.Response.Body,
 	})
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // optionalUser tries to extract the current user from session cookie.
@@ -430,8 +430,10 @@ func fetchGithubCommitHash(owner, repo, path string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	var commits []struct{ SHA string `json:"sha"` }
-	if err := json.NewDecoder(resp.Body).Decode(&commits); err != nil || len(commits) == 0 {
+	var commits []struct {
+		SHA string `json:"sha"`
+	}
+	if err := jsonx.NewDecoder(resp.Body).Decode(&commits); err != nil || len(commits) == 0 {
 		return "", fmt.Errorf("no commits found")
 	}
 	return commits[0].SHA, nil

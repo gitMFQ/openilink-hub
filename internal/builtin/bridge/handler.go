@@ -5,8 +5,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
@@ -26,13 +26,13 @@ type bridgeConfig struct {
 
 func (h *Handler) HandleEvent(inst *store.AppInstallation, event *app.Event) error {
 	var cfg bridgeConfig
-	if err := json.Unmarshal(inst.Config, &cfg); err != nil {
+	if err := jsonx.Unmarshal(inst.Config, &cfg); err != nil {
 		// TODO: remove after data migration — unwrap double-encoded config
 		// (stored as a JSON string instead of a JSON object due to a prior
 		// frontend bug, issue #197).
 		var raw string
-		if json.Unmarshal(inst.Config, &raw) == nil && len(raw) > 0 && raw[0] == '{' {
-			json.Unmarshal([]byte(raw), &cfg)
+		if jsonx.Unmarshal(inst.Config, &raw) == nil && len(raw) > 0 && raw[0] == '{' {
+			jsonx.Unmarshal([]byte(raw), &cfg)
 		}
 	}
 	if cfg.ForwardURL == "" {
@@ -48,7 +48,7 @@ func (h *Handler) HandleEvent(inst *store.AppInstallation, event *app.Event) err
 		"bot":             map[string]string{"id": inst.BotID},
 		"event":           event,
 	}
-	body, err := json.Marshal(envelope)
+	body, err := jsonx.Marshal(envelope)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}

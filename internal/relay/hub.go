@@ -1,7 +1,7 @@
 package relay
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"sync"
 )
@@ -60,7 +60,7 @@ func (h *Hub) Broadcast(botID string, env Envelope) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	data, err := json.Marshal(env)
+	data, err := jsonx.Marshal(env)
 	if err != nil {
 		return
 	}

@@ -3,8 +3,8 @@ package sqlite
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"time"
 
 	"github.com/openilink/openilink-hub/internal/store"
@@ -31,7 +31,7 @@ func (db *DB) AppendSpan(traceID, botID, name, kind, statusCode, statusMessage s
 	var parentSpanID string
 	_ = db.QueryRow("SELECT span_id FROM trace_spans WHERE trace_id=? AND parent_span_id='' LIMIT 1", traceID).Scan(&parentSpanID)
 
-	attrsJSON, _ := json.Marshal(attrs)
+	attrsJSON, _ := jsonx.Marshal(attrs)
 	now := time.Now().UnixMilli()
 	_, err := db.Exec(`INSERT INTO trace_spans
 		(trace_id, span_id, parent_span_id, name, kind, status_code, status_message, start_time, end_time, attributes, events, bot_id)
@@ -83,8 +83,8 @@ func scanSpans(rows interface {
 			&attrsStr, &eventsStr, &s.BotID, &s.CreatedAt); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal([]byte(attrsStr), &s.Attributes)
-		_ = json.Unmarshal([]byte(eventsStr), &s.Events)
+		_ = jsonx.Unmarshal([]byte(attrsStr), &s.Attributes)
+		_ = jsonx.Unmarshal([]byte(eventsStr), &s.Events)
 		spans = append(spans, s)
 	}
 	return spans, rows.Err()

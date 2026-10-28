@@ -1,7 +1,7 @@
 package push
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"sync"
 )
@@ -46,7 +46,7 @@ func (h *Hub) Unregister(c *Conn) {
 
 // Notify sends an event to all connections of a user that are subscribed to the given botID.
 func (h *Hub) Notify(userID, botID string, env Envelope) {
-	data, err := json.Marshal(env)
+	data, err := jsonx.Marshal(env)
 	if err != nil {
 		return
 	}
@@ -71,7 +71,7 @@ func (h *Hub) Notify(userID, botID string, env Envelope) {
 
 // NotifyUser sends an event to all connections of a user (no subscription filter).
 func (h *Hub) NotifyUser(userID string, env Envelope) {
-	data, err := json.Marshal(env)
+	data, err := jsonx.Marshal(env)
 	if err != nil {
 		return
 	}

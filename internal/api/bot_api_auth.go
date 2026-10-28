@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
@@ -29,7 +29,7 @@ func installationFromContext(ctx context.Context) *store.AppInstallation {
 func botAPIError(w http.ResponseWriter, msg string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": msg})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": false, "error": msg})
 }
 
 // appTokenAuth is middleware that authenticates requests using Bearer app_token
@@ -148,7 +148,7 @@ func (s *Server) requireScope(inst *store.AppInstallation, scope string) bool {
 		return false
 	}
 	var scopes []string
-	if err := json.Unmarshal(inst.Scopes, &scopes); err != nil {
+	if err := jsonx.Unmarshal(inst.Scopes, &scopes); err != nil {
 		return false
 	}
 	for _, sc := range scopes {

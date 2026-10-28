@@ -4,13 +4,13 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -136,7 +136,7 @@ func (s *Server) handleOAuthProviders(w http.ResponseWriter, r *http.Request) {
 	type providerInfo struct {
 		Name        string `json:"name"`
 		DisplayName string `json:"display_name"`
-		Type        string `json:"type"`         // "oauth" or "oidc"
+		Type        string `json:"type"`          // "oauth" or "oidc"
 		Key         string `json:"key,omitempty"` // internal key for account matching (omitted when same as name)
 	}
 
@@ -160,10 +160,10 @@ func (s *Server) handleOAuthProviders(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	sort.Slice(list, func(i, j int) bool { return list[i].Name < list[j].Name })
+	slices.SortFunc(list, func(a, b providerInfo) int { return strings.Compare(a.Name, b.Name) })
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"providers": list})
+	jsonx.NewEncoder(w).Encode(map[string]any{"providers": list})
 }
 
 // GET /api/auth/oauth/{provider} — redirect to OAuth provider (login flow)
@@ -325,7 +325,7 @@ func (s *Server) handleOAuthAccounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(accounts)
+	jsonx.NewEncoder(w).Encode(accounts)
 }
 
 // DELETE /api/auth/oauth/accounts/{provider} — unlink an OAuth account
@@ -461,7 +461,7 @@ func exchangeCode(p *oauthProvider, redirectURI, code string) (string, error) {
 		AccessToken string `json:"access_token"`
 		Error       string `json:"error"`
 	}
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := jsonx.Unmarshal(body, &result); err != nil {
 		vals, _ := url.ParseQuery(string(body))
 		result.AccessToken = vals.Get("access_token")
 		result.Error = vals.Get("error")
@@ -496,7 +496,7 @@ func fetchUserInfo(p *oauthProvider, accessToken string) (providerID, username, 
 			Email     string `json:"email"`
 			AvatarURL string `json:"avatar_url"`
 		}
-		json.Unmarshal(body, &u)
+		jsonx.Unmarshal(body, &u)
 		return strconv.Itoa(u.ID), u.Login, u.Email, u.AvatarURL, nil
 
 	case "linuxdo":
@@ -507,7 +507,7 @@ func fetchUserInfo(p *oauthProvider, accessToken string) (providerID, username, 
 			Avatar   string `json:"avatar_url"`
 			Name     string `json:"name"`
 		}
-		json.Unmarshal(body, &u)
+		jsonx.Unmarshal(body, &u)
 		name := u.Username
 		if name == "" {
 			name = u.Name

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"strings"
 
@@ -190,7 +190,7 @@ func installationHasScope(inst *store.AppInstallation, scope string) bool {
 		return false
 	}
 	var scopes []string
-	if err := json.Unmarshal(inst.Scopes, &scopes); err != nil {
+	if err := jsonx.Unmarshal(inst.Scopes, &scopes); err != nil {
 		return false
 	}
 	for _, s := range scopes {

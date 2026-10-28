@@ -1,7 +1,7 @@
 package push
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"sync"
 	"time"
@@ -23,9 +23,9 @@ type Conn struct {
 	hub    *Hub
 	send   chan []byte
 
-	mu       sync.RWMutex
-	subs     map[string]struct{} // subscribed bot IDs
-	closed   bool
+	mu        sync.RWMutex
+	subs      map[string]struct{} // subscribed bot IDs
+	closed    bool
 	closeOnce sync.Once
 }
 
@@ -93,14 +93,14 @@ func (c *Conn) ReadPump() {
 		}
 
 		var env Envelope
-		if err := json.Unmarshal(msg, &env); err != nil {
+		if err := jsonx.Unmarshal(msg, &env); err != nil {
 			continue
 		}
 
 		switch env.Type {
 		case "subscribe":
 			var sub Subscribe
-			if json.Unmarshal(env.Data, &sub) == nil {
+			if jsonx.Unmarshal(env.Data, &sub) == nil {
 				c.mu.Lock()
 				for _, id := range sub.BotIDs {
 					c.subs[id] = struct{}{}
@@ -110,7 +110,7 @@ func (c *Conn) ReadPump() {
 			}
 		case "unsubscribe":
 			var unsub Unsubscribe
-			if json.Unmarshal(env.Data, &unsub) == nil {
+			if jsonx.Unmarshal(env.Data, &unsub) == nil {
 				c.mu.Lock()
 				for _, id := range unsub.BotIDs {
 					delete(c.subs, id)
@@ -153,6 +153,6 @@ func (c *Conn) WritePump() {
 }
 
 func mustMarshal(v any) []byte {
-	b, _ := json.Marshal(v)
+	b, _ := jsonx.Marshal(v)
 	return b
 }

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 
 	"github.com/openilink/openilink-hub/internal/auth"
@@ -25,7 +25,7 @@ func (s *Server) handleListChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(channels)
+	jsonx.NewEncoder(w).Encode(channels)
 }
 
 func (s *Server) handleCreateChannel(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +33,12 @@ func (s *Server) handleCreateChannel(w http.ResponseWriter, r *http.Request) {
 	botID := r.PathValue("id")
 
 	var req struct {
-		Name       string               `json:"name"`
-		Handle     string               `json:"handle"`
-		FilterRule *store.FilterRule  `json:"filter_rule,omitempty"`
+		Name       string            `json:"name"`
+		Handle     string            `json:"handle"`
+		FilterRule *store.FilterRule `json:"filter_rule,omitempty"`
 		AIConfig   *store.AIConfig   `json:"ai_config,omitempty"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
 		jsonError(w, "name required", http.StatusBadRequest)
 		return
 	}
@@ -58,7 +58,7 @@ func (s *Server) handleCreateChannel(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(ch)
+	jsonx.NewEncoder(w).Encode(ch)
 }
 
 func (s *Server) handleUpdateChannel(w http.ResponseWriter, r *http.Request) {
@@ -80,14 +80,14 @@ func (s *Server) handleUpdateChannel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Name          string              `json:"name"`
-		Handle        *string             `json:"handle"`
-		FilterRule    *store.FilterRule `json:"filter_rule"`
-		AIConfig      *store.AIConfig  `json:"ai_config"`
+		Name          string               `json:"name"`
+		Handle        *string              `json:"handle"`
+		FilterRule    *store.FilterRule    `json:"filter_rule"`
+		AIConfig      *store.AIConfig      `json:"ai_config"`
 		WebhookConfig *store.WebhookConfig `json:"webhook_config"`
-		Enabled       *bool               `json:"enabled"`
+		Enabled       *bool                `json:"enabled"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -173,5 +173,5 @@ func (s *Server) handleRotateKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"api_key": newKey})
+	jsonx.NewEncoder(w).Encode(map[string]string{"api_key": newKey})
 }

@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	ilinkProvider "github.com/openilink/openilink-hub/internal/provider/ilink"
 	"github.com/openilink/openilink-hub/internal/auth"
-	"github.com/openilink/openilink-hub/internal/store"
 	"github.com/openilink/openilink-hub/internal/provider"
+	ilinkProvider "github.com/openilink/openilink-hub/internal/provider/ilink"
+	"github.com/openilink/openilink-hub/internal/store"
 )
 
 func (s *Server) handleListBots(w http.ResponseWriter, r *http.Request) {
@@ -26,21 +26,21 @@ func (s *Server) handleListBots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type botResp struct {
-		ID                 string          `json:"id"`
-		Name               string          `json:"name"`
-		DisplayName        string          `json:"display_name"`
-		Provider           string          `json:"provider"`
-		Status             string          `json:"status"`
-		CanSend            bool            `json:"can_send"`
-		SendDisabledReason string          `json:"send_disabled_reason,omitempty"`
-		AIEnabled          bool            `json:"ai_enabled"`
-		AIModel            string          `json:"ai_model"`
-		MsgCount           int64           `json:"msg_count"`
-		ReminderHours      int             `json:"reminder_hours"`
-		LastMsgAt          *int64          `json:"last_msg_at,omitempty"`
-		LastRemindedAt     *int64          `json:"last_reminded_at,omitempty"`
-		CreatedAt          int64           `json:"created_at"`
-		Extra              json.RawMessage `json:"extra,omitempty"`
+		ID                 string           `json:"id"`
+		Name               string           `json:"name"`
+		DisplayName        string           `json:"display_name"`
+		Provider           string           `json:"provider"`
+		Status             string           `json:"status"`
+		CanSend            bool             `json:"can_send"`
+		SendDisabledReason string           `json:"send_disabled_reason,omitempty"`
+		AIEnabled          bool             `json:"ai_enabled"`
+		AIModel            string           `json:"ai_model"`
+		MsgCount           int64            `json:"msg_count"`
+		ReminderHours      int              `json:"reminder_hours"`
+		LastMsgAt          *int64           `json:"last_msg_at,omitempty"`
+		LastRemindedAt     *int64           `json:"last_reminded_at,omitempty"`
+		CreatedAt          int64            `json:"created_at"`
+		Extra              jsonx.RawMessage `json:"extra,omitempty"`
 	}
 	// Batch check context_token freshness to avoid N+1 queries
 	botIDs := make([]string, len(bots))
@@ -68,18 +68,18 @@ func (s *Server) handleListBots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // extractPublicCredentials returns non-secret info from credentials for the API response.
-func extractPublicCredentials(prov string, creds json.RawMessage) json.RawMessage {
+func extractPublicCredentials(prov string, creds jsonx.RawMessage) jsonx.RawMessage {
 	if prov == "ilink" {
 		var c struct {
 			BotID       string `json:"bot_id"`
 			ILinkUserID string `json:"ilink_user_id"`
 		}
-		json.Unmarshal(creds, &c)
-		data, _ := json.Marshal(map[string]string{
+		jsonx.Unmarshal(creds, &c)
+		data, _ := jsonx.Marshal(map[string]string{
 			"bot_id":        c.BotID,
 			"ilink_user_id": c.ILinkUserID,
 		})
@@ -120,7 +120,7 @@ func (s *Server) handleBindStart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	jsonx.NewEncoder(w).Encode(map[string]string{
 		"session_id": sessionID,
 		"qr_url":     qrURL,
 	})
@@ -156,13 +156,13 @@ func (s *Server) handleBindStatus(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	sendEvent := func(event, data string) {
-		var parsed json.RawMessage
-		if err := json.Unmarshal([]byte(data), &parsed); err != nil {
-			parsed, _ = json.Marshal(data)
+		var parsed jsonx.RawMessage
+		if err := jsonx.Unmarshal([]byte(data), &parsed); err != nil {
+			parsed, _ = jsonx.Marshal(data)
 		}
 		msg := map[string]any{"event": event}
 		var fields map[string]any
-		if json.Unmarshal(parsed, &fields) == nil {
+		if jsonx.Unmarshal(parsed, &fields) == nil {
 			for k, v := range fields {
 				msg[k] = v
 			}
@@ -189,14 +189,14 @@ func (s *Server) handleBindStatus(w http.ResponseWriter, r *http.Request) {
 		case "scanned":
 			sendEvent("status", `{"status":"scanned"}`)
 		case "expired":
-			j, _ := json.Marshal(map[string]string{"status": "refreshed", "qr_url": result.QRURL})
+			j, _ := jsonx.Marshal(map[string]string{"status": "refreshed", "qr_url": result.QRURL})
 			sendEvent("status", string(j))
 		case "confirmed":
 			var creds struct {
 				BotID       string `json:"bot_id"`
 				ILinkUserID string `json:"ilink_user_id"`
 			}
-			json.Unmarshal(result.Credentials, &creds)
+			jsonx.Unmarshal(result.Credentials, &creds)
 
 			var bot *store.Bot
 
@@ -252,7 +252,7 @@ func (s *Server) handleBindStatus(w http.ResponseWriter, r *http.Request) {
 
 			s.BotManager.StartBot(context.Background(), bot)
 
-			j, _ := json.Marshal(map[string]any{"status": "connected", "bot_id": bot.ID, "is_new": isNew})
+			j, _ := jsonx.Marshal(map[string]any{"status": "connected", "bot_id": bot.ID, "is_new": isNew})
 			sendEvent("status", string(j))
 			return
 		}
@@ -308,7 +308,7 @@ func (s *Server) handleUpdateBot(w http.ResponseWriter, r *http.Request) {
 		DisplayName   *string `json:"display_name"`
 		ReminderHours *int    `json:"reminder_hours"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -352,7 +352,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	}
 	stats.ConnectedWS = s.Hub.ConnectedCount()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	jsonx.NewEncoder(w).Encode(stats)
 }
 
 func (s *Server) handleAdminStats(w http.ResponseWriter, r *http.Request) {
@@ -363,7 +363,7 @@ func (s *Server) handleAdminStats(w http.ResponseWriter, r *http.Request) {
 	}
 	stats.ConnectedWS = s.Hub.ConnectedCount()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	jsonx.NewEncoder(w).Encode(stats)
 }
 
 // POST /api/bots/{id}/send
@@ -418,10 +418,10 @@ func (s *Server) handleBotSend(w http.ResponseWriter, r *http.Request) {
 	if content == "" && msg.FileName != "" {
 		content = msg.FileName
 	}
-	itemList, _ := json.Marshal([]map[string]any{{"type": msgType, "text": content}})
+	itemList, _ := jsonx.Marshal([]map[string]any{{"type": msgType, "text": content}})
 
 	mediaStatus := ""
-	mediaKeys := json.RawMessage(`{}`)
+	mediaKeys := jsonx.RawMessage(`{}`)
 	if len(msg.Data) > 0 && s.ObjectStore != nil {
 		ct := detectContentType(msgType)
 		ext := detectExt(msg.FileName, msgType)
@@ -429,7 +429,7 @@ func (s *Server) handleBotSend(w http.ResponseWriter, r *http.Request) {
 			time.Now().Format("2006/01/02"), time.Now().UnixMilli(), ext)
 		if _, err := s.ObjectStore.Put(r.Context(), key, ct, msg.Data); err == nil {
 			mediaStatus = "ready"
-			mediaKeys, _ = json.Marshal(map[string]string{"0": key})
+			mediaKeys, _ = jsonx.Marshal(map[string]string{"0": key})
 		}
 	}
 
@@ -444,7 +444,7 @@ func (s *Server) handleBotSend(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "client_id": clientID})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "client_id": clientID})
 }
 
 func detectMediaType(filename, mime string) string {
@@ -527,7 +527,7 @@ func parseSendRequest(r *http.Request) (provider.OutboundMessage, string, error)
 		Recipient string `json:"recipient"`
 		Text      string `json:"text"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Text == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Text == "" {
 		return provider.OutboundMessage{}, "", fmt.Errorf("text required")
 	}
 	return provider.OutboundMessage{
@@ -550,7 +550,7 @@ func (s *Server) handleSetBotAI(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Enabled bool `json:"enabled"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -580,7 +580,7 @@ func (s *Server) handleSetBotAIModel(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Model string `json:"model"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -611,5 +611,5 @@ func (s *Server) handleBotContacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(contacts)
+	jsonx.NewEncoder(w).Encode(contacts)
 }

@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 
@@ -151,7 +151,7 @@ func (s *Server) HandleAppWSSend(conn *app.WSConn, msg map[string]any) {
 
 	// Save outbound message to DB
 	item := map[string]any{"type": msgType, "text": content}
-	itemList, _ := json.Marshal([]any{item})
+	itemList, _ := jsonx.Marshal([]any{item})
 	s.Store.SaveMessage(&store.Message{
 		BotID:       conn.BotID,
 		Direction:   "outbound",

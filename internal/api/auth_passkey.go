@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/base64"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"strings"
 
@@ -19,7 +19,7 @@ func (s *Server) handleRegisterBegin(w http.ResponseWriter, r *http.Request) {
 		Username    string `json:"username"`
 		DisplayName string `json:"display_name"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" {
 		jsonError(w, "username required", http.StatusBadRequest)
 		return
 	}
@@ -66,7 +66,7 @@ func (s *Server) handleRegisterBegin(w http.ResponseWriter, r *http.Request) {
 
 	s.SessionStore.Set("reg:"+user.ID, session)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(options)
+	jsonx.NewEncoder(w).Encode(options)
 }
 
 func (s *Server) handleRegisterFinish(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +91,7 @@ func (s *Server) handleRegisterFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transportsJSON, _ := json.Marshal(cred.Transport)
+	transportsJSON, _ := jsonx.Marshal(cred.Transport)
 	if err := s.Store.SaveCredential(&store.Credential{
 		ID:              base64.RawURLEncoding.EncodeToString(cred.ID),
 		UserID:          user.ID,
@@ -111,7 +111,7 @@ func (s *Server) handleRegisterFinish(w http.ResponseWriter, r *http.Request) {
 	setSessionCookie(w, token)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "user": user})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "user": user})
 }
 
 // --- WebAuthn login ---
@@ -120,7 +120,7 @@ func (s *Server) handleLoginBegin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Username string `json:"username"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" {
 		options, session, err := s.WebAuthn.BeginDiscoverableLogin()
 		if err != nil {
 			jsonError(w, "webauthn begin failed", http.StatusInternalServerError)
@@ -128,7 +128,7 @@ func (s *Server) handleLoginBegin(w http.ResponseWriter, r *http.Request) {
 		}
 		s.SessionStore.Set("login:discoverable", session)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(options)
+		jsonx.NewEncoder(w).Encode(options)
 		return
 	}
 
@@ -151,7 +151,7 @@ func (s *Server) handleLoginBegin(w http.ResponseWriter, r *http.Request) {
 
 	s.SessionStore.Set("login:"+user.ID, session)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(options)
+	jsonx.NewEncoder(w).Encode(options)
 }
 
 func (s *Server) handleLoginFinish(w http.ResponseWriter, r *http.Request) {
@@ -208,7 +208,7 @@ func (s *Server) handleLoginFinish(w http.ResponseWriter, r *http.Request) {
 	setSessionCookie(w, token)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true, "user_id": userID})
+	jsonx.NewEncoder(w).Encode(map[string]any{"ok": true, "user_id": userID})
 }
 
 // --- Passkey binding (authenticated) ---
@@ -230,7 +230,7 @@ func (s *Server) handleListPasskeys(w http.ResponseWriter, r *http.Request) {
 		result[i] = passkeyResp{ID: c.ID, Name: c.Name, CreatedAt: c.CreatedAt}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 func (s *Server) handlePasskeyBindBegin(w http.ResponseWriter, r *http.Request) {
@@ -250,7 +250,7 @@ func (s *Server) handlePasskeyBindBegin(w http.ResponseWriter, r *http.Request) 
 
 	s.SessionStore.Set("bind:"+user.ID, session)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(options)
+	jsonx.NewEncoder(w).Encode(options)
 }
 
 func (s *Server) handlePasskeyBindFinish(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +282,7 @@ func (s *Server) handlePasskeyBindFinish(w http.ResponseWriter, r *http.Request)
 		name = string([]rune(name)[:50])
 	}
 
-	transportsJSON, _ := json.Marshal(cred.Transport)
+	transportsJSON, _ := jsonx.Marshal(cred.Transport)
 	if err := s.Store.SaveCredential(&store.Credential{
 		ID:              base64.RawURLEncoding.EncodeToString(cred.ID),
 		UserID:          user.ID,
@@ -318,7 +318,7 @@ func (s *Server) handleRenamePasskey(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name string `json:"name"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "name required", http.StatusBadRequest)
 		return
 	}

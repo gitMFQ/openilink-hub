@@ -3,7 +3,7 @@ package api
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 
 	"github.com/openilink/openilink-hub/internal/auth"
@@ -30,7 +30,7 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	jsonx.NewEncoder(w).Encode(users)
 }
 
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +41,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		DisplayName string `json:"display_name"`
 		Role        string `json:"role"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" || req.Password == "" {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" || req.Password == "" {
 		jsonError(w, "username and password required", http.StatusBadRequest)
 		return
 	}
@@ -68,7 +68,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	jsonx.NewEncoder(w).Encode(user)
 }
 
 func (s *Server) handleUpdateUserRole(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,7 @@ func (s *Server) handleUpdateUserRole(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Role string `json:"role"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -115,7 +115,7 @@ func (s *Server) handleUpdateUserStatus(w http.ResponseWriter, r *http.Request) 
 	var req struct {
 		Status string `json:"status"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -196,5 +196,5 @@ func (s *Server) handleResetUserPassword(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"password": password})
+	jsonx.NewEncoder(w).Encode(map[string]string{"password": password})
 }

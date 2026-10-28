@@ -1,7 +1,7 @@
 package relay
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"testing"
 )
 
@@ -18,7 +18,7 @@ func TestNewEnvelope(t *testing.T) {
 	}
 
 	var data MessageData
-	if err := json.Unmarshal(env.Data, &data); err != nil {
+	if err := jsonx.Unmarshal(env.Data, &data); err != nil {
 		t.Fatalf("unmarshal data: %v", err)
 	}
 	if data.ExternalID != "123" {
@@ -52,7 +52,7 @@ func TestNewAck(t *testing.T) {
 			}
 
 			var ack SendAckData
-			if err := json.Unmarshal(env.Data, &ack); err != nil {
+			if err := jsonx.Unmarshal(env.Data, &ack); err != nil {
 				t.Fatalf("unmarshal: %v", err)
 			}
 			if ack.ReqID != tt.reqID {
@@ -67,13 +67,13 @@ func TestNewAck(t *testing.T) {
 
 func TestEnvelopeJSON(t *testing.T) {
 	env := Envelope{Type: "ping"}
-	data, err := json.Marshal(env)
+	data, err := jsonx.Marshal(env)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var decoded Envelope
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	if err := jsonx.Unmarshal(data, &decoded); err != nil {
 		t.Fatal(err)
 	}
 	if decoded.Type != "ping" {
@@ -84,7 +84,7 @@ func TestEnvelopeJSON(t *testing.T) {
 func TestSendTextDataJSON(t *testing.T) {
 	input := `{"type":"send_text","req_id":"abc","data":{"recipient":"user123","text":"hi"}}`
 	var env Envelope
-	if err := json.Unmarshal([]byte(input), &env); err != nil {
+	if err := jsonx.Unmarshal([]byte(input), &env); err != nil {
 		t.Fatal(err)
 	}
 	if env.Type != "send_text" || env.ReqID != "abc" {
@@ -92,7 +92,7 @@ func TestSendTextDataJSON(t *testing.T) {
 	}
 
 	var data SendTextData
-	if err := json.Unmarshal(env.Data, &data); err != nil {
+	if err := jsonx.Unmarshal(env.Data, &data); err != nil {
 		t.Fatal(err)
 	}
 	if data.Recipient != "user123" || data.Text != "hi" {

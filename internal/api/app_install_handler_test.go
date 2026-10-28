@@ -1,8 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"testing"
 )
@@ -20,7 +20,7 @@ func TestHandleUpdateInstallation_ConfigUnwrap(t *testing.T) {
 	basePath := fmt.Sprintf("/api/apps/%s/installations/%s", app.ID, inst.ID)
 
 	// readConfig fetches the stored config via GET.
-	readConfig := func(t *testing.T) json.RawMessage {
+	readConfig := func(t *testing.T) jsonx.RawMessage {
 		t.Helper()
 		resp := doJSON(t, env.ts, "GET", basePath, nil, withCookie(env.cookie))
 		defer resp.Body.Close()
@@ -28,9 +28,9 @@ func TestHandleUpdateInstallation_ConfigUnwrap(t *testing.T) {
 			t.Fatalf("GET installation: expected 200, got %d", resp.StatusCode)
 		}
 		var result struct {
-			Config json.RawMessage `json:"config"`
+			Config jsonx.RawMessage `json:"config"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		if err := jsonx.NewDecoder(resp.Body).Decode(&result); err != nil {
 			t.Fatalf("decode GET response: %v", err)
 		}
 		return result.Config
@@ -54,7 +54,7 @@ func TestHandleUpdateInstallation_ConfigUnwrap(t *testing.T) {
 
 		got := readConfig(t)
 		var parsed map[string]string
-		if err := json.Unmarshal(got, &parsed); err != nil {
+		if err := jsonx.Unmarshal(got, &parsed); err != nil {
 			t.Fatalf("stored config is not a JSON object: %v (raw: %s)", err, got)
 		}
 		if parsed["forward_url"] != wantForwardURL {
@@ -65,14 +65,14 @@ func TestHandleUpdateInstallation_ConfigUnwrap(t *testing.T) {
 	t.Run("double-encoded object config is unwrapped", func(t *testing.T) {
 		// Simulate the legacy frontend bug: JSON.stringify called twice, so the
 		// wire value is a JSON string whose contents are the real object.
-		inner, _ := json.Marshal(map[string]string{"forward_url": wantForwardURL})
+		inner, _ := jsonx.Marshal(map[string]string{"forward_url": wantForwardURL})
 		doubleEncoded := string(inner) // will be marshalled again as a JSON string by doJSON
 
 		putConfig(t, doubleEncoded)
 
 		got := readConfig(t)
 		var parsed map[string]string
-		if err := json.Unmarshal(got, &parsed); err != nil {
+		if err := jsonx.Unmarshal(got, &parsed); err != nil {
 			t.Fatalf("double-encoded config was not unwrapped to object: %v (raw: %s)", err, got)
 		}
 		if parsed["forward_url"] != wantForwardURL {

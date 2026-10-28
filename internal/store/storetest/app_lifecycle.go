@@ -1,7 +1,7 @@
 package storetest
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"testing"
 
 	"github.com/openilink/openilink-hub/internal/store"
@@ -20,11 +20,11 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 	// -----------------------------------------------------------------------
 
 	t.Run("CreateAppWithAllFields", func(t *testing.T) {
-		tools, _ := json.Marshal([]store.AppTool{
+		tools, _ := jsonx.Marshal([]store.AppTool{
 			{Name: "deploy", Command: "deploy", Description: "Deploy to production"},
 		})
-		events, _ := json.Marshal([]string{"message", "reaction.added"})
-		scopes, _ := json.Marshal([]string{"message:read", "message:write"})
+		events, _ := jsonx.Marshal([]string{"message", "reaction.added"})
+		scopes, _ := jsonx.Marshal([]string{"message:read", "message:write"})
 
 		app, err := s.CreateApp(&store.App{
 			OwnerID:          u.ID,
@@ -82,21 +82,21 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 
 		// Verify JSON fields round-trip.
 		var gotTools []store.AppTool
-		if err := json.Unmarshal(got.Tools, &gotTools); err != nil {
+		if err := jsonx.Unmarshal(got.Tools, &gotTools); err != nil {
 			t.Fatalf("unmarshal tools: %v", err)
 		}
 		if len(gotTools) != 1 || gotTools[0].Command != "deploy" {
 			t.Errorf("tools = %s", got.Tools)
 		}
 		var gotEvents []string
-		if err := json.Unmarshal(got.Events, &gotEvents); err != nil {
+		if err := jsonx.Unmarshal(got.Events, &gotEvents); err != nil {
 			t.Fatalf("unmarshal events: %v", err)
 		}
 		if len(gotEvents) != 2 {
 			t.Errorf("events = %s", got.Events)
 		}
 		var gotScopes []string
-		if err := json.Unmarshal(got.Scopes, &gotScopes); err != nil {
+		if err := jsonx.Unmarshal(got.Scopes, &gotScopes); err != nil {
 			t.Fatalf("unmarshal scopes: %v", err)
 		}
 		if len(gotScopes) != 2 {
@@ -124,7 +124,7 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 			t.Errorf("config_schema should be set, got %q", string(got.ConfigSchema))
 		}
 		var parsed map[string]any
-		if err := json.Unmarshal([]byte(got.ConfigSchema), &parsed); err != nil {
+		if err := jsonx.Unmarshal([]byte(got.ConfigSchema), &parsed); err != nil {
 			t.Fatalf("unmarshal config_schema: %v", err)
 		}
 		if parsed["type"] != "object" {
@@ -255,12 +255,12 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 
 	t.Run("UpdateAppFields", func(t *testing.T) {
 		app, _ := s.GetAppBySlug("full-app", "")
-		newTools, _ := json.Marshal([]store.AppTool{
+		newTools, _ := jsonx.Marshal([]store.AppTool{
 			{Name: "deploy", Command: "deploy"},
 			{Name: "status", Command: "status"},
 		})
-		newEvents, _ := json.Marshal([]string{"message", "reaction.added", "channel.created"})
-		newScopes, _ := json.Marshal([]string{"message:read", "message:write", "channel:read"})
+		newEvents, _ := jsonx.Marshal([]string{"message", "reaction.added", "channel.created"})
+		newScopes, _ := jsonx.Marshal([]string{"message:read", "message:write", "channel:read"})
 
 		err := s.UpdateApp(app.ID, "Full App Updated", "updated desc", "star", "https://new-icon.png",
 			"https://new-home.com", "https://new-setup.com", "https://new-redirect.com", "{}",
@@ -277,7 +277,7 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 			t.Errorf("description = %q", got.Description)
 		}
 		var tools []store.AppTool
-		json.Unmarshal(got.Tools, &tools)
+		jsonx.Unmarshal(got.Tools, &tools)
 		if len(tools) != 2 {
 			t.Errorf("expected 2 tools, got %d", len(tools))
 		}
@@ -319,9 +319,9 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 	var marketplaceAppID string
 
 	t.Run("CreateMarketplaceApp", func(t *testing.T) {
-		tools, _ := json.Marshal([]store.AppTool{{Name: "sync", Command: "sync"}})
-		events, _ := json.Marshal([]string{"message"})
-		scopes, _ := json.Marshal([]string{"message:read"})
+		tools, _ := jsonx.Marshal([]store.AppTool{{Name: "sync", Command: "sync"}})
+		events, _ := jsonx.Marshal([]string{"message"})
+		scopes, _ := jsonx.Marshal([]string{"message:read"})
 
 		app, err := s.CreateApp(&store.App{
 			OwnerID:     u.ID,
@@ -381,9 +381,9 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 	})
 
 	t.Run("UpdateMarketplaceApp", func(t *testing.T) {
-		newTools, _ := json.Marshal([]store.AppTool{{Name: "sync-v2", Command: "sync"}})
-		newEvents, _ := json.Marshal([]string{"message", "reaction"})
-		newScopes, _ := json.Marshal([]string{"message:read", "reaction:read"})
+		newTools, _ := jsonx.Marshal([]store.AppTool{{Name: "sync-v2", Command: "sync"}})
+		newEvents, _ := jsonx.Marshal([]string{"message", "reaction"})
+		newScopes, _ := jsonx.Marshal([]string{"message:read", "reaction:read"})
 
 		err := s.UpdateMarketplaceApp(marketplaceAppID, "Marketplace App v2",
 			"updated from registry", "https://new-icon.png", "https://new-home.com",
@@ -481,8 +481,8 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 	})
 
 	t.Run("UpdateInstallation", func(t *testing.T) {
-		cfg := json.RawMessage(`{"channel":"general"}`)
-		scopes := json.RawMessage(`["message:read"]`)
+		cfg := jsonx.RawMessage(`{"channel":"general"}`)
+		scopes := jsonx.RawMessage(`["message:read"]`)
 		if err := s.UpdateInstallation(instID, "my-app-handle", cfg, scopes, false); err != nil {
 			t.Fatalf("UpdateInstallation: %v", err)
 		}
@@ -494,14 +494,14 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 			t.Error("expected enabled=false after update")
 		}
 		var gotCfg map[string]string
-		if err := json.Unmarshal(got.Config, &gotCfg); err != nil {
+		if err := jsonx.Unmarshal(got.Config, &gotCfg); err != nil {
 			t.Fatalf("unmarshal config: %v", err)
 		}
 		if gotCfg["channel"] != "general" {
 			t.Errorf("config.channel = %q", gotCfg["channel"])
 		}
 		var gotScopes []string
-		if err := json.Unmarshal(got.Scopes, &gotScopes); err != nil {
+		if err := jsonx.Unmarshal(got.Scopes, &gotScopes); err != nil {
 			t.Fatalf("unmarshal scopes: %v", err)
 		}
 		if len(gotScopes) != 1 || gotScopes[0] != "message:read" {
@@ -510,7 +510,7 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 	})
 
 	t.Run("UpdateInstallationTools", func(t *testing.T) {
-		tools, _ := json.Marshal([]store.AppTool{
+		tools, _ := jsonx.Marshal([]store.AppTool{
 			{Name: "hn", Command: "hn", Description: "Hacker News"},
 			{Name: "weather", Command: "weather", Description: "Weather report"},
 		})
@@ -522,7 +522,7 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 			t.Fatalf("GetInstallation after UpdateInstallationTools: %v", err)
 		}
 		var gotTools []store.AppTool
-		if err := json.Unmarshal(got.Tools, &gotTools); err != nil {
+		if err := jsonx.Unmarshal(got.Tools, &gotTools); err != nil {
 			t.Fatalf("unmarshal tools: %v", err)
 		}
 		if len(gotTools) != 2 {
@@ -902,8 +902,8 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 	// -----------------------------------------------------------------------
 
 	t.Run("ScopeRoundTrip_AppScopes", func(t *testing.T) {
-		scopes, _ := json.Marshal([]string{"message:read", "reaction:read"})
-		events, _ := json.Marshal([]string{"message"})
+		scopes, _ := jsonx.Marshal([]string{"message:read", "reaction:read"})
+		events, _ := jsonx.Marshal([]string{"message"})
 		scopeApp, err := s.CreateApp(&store.App{
 			OwnerID:     u.ID,
 			Name:        "Scope Test App",
@@ -917,7 +917,7 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 		}
 		got, _ := s.GetApp(scopeApp.ID)
 		var gotScopes []string
-		json.Unmarshal(got.Scopes, &gotScopes)
+		jsonx.Unmarshal(got.Scopes, &gotScopes)
 		if len(gotScopes) != 2 {
 			t.Fatalf("expected 2 scopes, got %d", len(gotScopes))
 		}
@@ -941,32 +941,32 @@ func TestAppLifecycle(t *testing.T, s store.Store) {
 
 		// Default: installation scopes should be empty array.
 		var defaultScopes []string
-		json.Unmarshal(inst.Scopes, &defaultScopes)
+		jsonx.Unmarshal(inst.Scopes, &defaultScopes)
 		if len(defaultScopes) != 0 {
 			t.Errorf("default installation scopes should be empty, got %s", inst.Scopes)
 		}
 
 		// Set installation-level scopes (subset of app scopes).
-		instScopes, _ := json.Marshal([]string{"message:read"})
-		if err := s.UpdateInstallation(inst.ID, "", json.RawMessage("{}"), instScopes, true); err != nil {
+		instScopes, _ := jsonx.Marshal([]string{"message:read"})
+		if err := s.UpdateInstallation(inst.ID, "", jsonx.RawMessage("{}"), instScopes, true); err != nil {
 			t.Fatalf("UpdateInstallation: %v", err)
 		}
 
 		got, _ := s.GetInstallation(inst.ID)
 		var gotScopes []string
-		json.Unmarshal(got.Scopes, &gotScopes)
+		jsonx.Unmarshal(got.Scopes, &gotScopes)
 		if len(gotScopes) != 1 || gotScopes[0] != "message:read" {
 			t.Errorf("installation scopes = %s, want [\"message:read\"]", got.Scopes)
 		}
 
 		// Clear installation scopes back to empty.
-		emptyScopes, _ := json.Marshal([]string{})
-		if err := s.UpdateInstallation(inst.ID, "", json.RawMessage("{}"), emptyScopes, true); err != nil {
+		emptyScopes, _ := jsonx.Marshal([]string{})
+		if err := s.UpdateInstallation(inst.ID, "", jsonx.RawMessage("{}"), emptyScopes, true); err != nil {
 			t.Fatalf("UpdateInstallation (clear scopes): %v", err)
 		}
 		got, _ = s.GetInstallation(inst.ID)
 		var clearedScopes []string
-		json.Unmarshal(got.Scopes, &clearedScopes)
+		jsonx.Unmarshal(got.Scopes, &clearedScopes)
 		if len(clearedScopes) != 0 {
 			t.Errorf("cleared scopes = %s, want []", got.Scopes)
 		}

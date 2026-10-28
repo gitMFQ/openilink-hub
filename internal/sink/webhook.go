@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/hmac"
-	"encoding/base64"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"log/slog"
 	"net/http"
@@ -188,7 +188,7 @@ func DebugRequest(script string, mockMsg webhookPayload, webhookURL string) *Deb
 	}
 	result.Logs = append(result.Logs, "✓ @match 通过")
 
-	body, _ := json.Marshal(mockMsg)
+	body, _ := jsonx.Marshal(mockMsg)
 	if webhookURL == "" {
 		webhookURL = "https://httpbin.org/post"
 	}
@@ -280,7 +280,6 @@ func DebugResponse(script string, mockMsg webhookPayload, response *resData) *De
 	return result
 }
 
-
 // MockPayload creates a test webhookPayload for debugging.
 func MockPayload(sender, content, msgType string) webhookPayload {
 	if sender == "" {
@@ -336,7 +335,7 @@ func (s *Webhook) Handle(d Delivery) {
 	}
 
 	msg := buildPayload(d)
-	body, _ := json.Marshal(msg)
+	body, _ := jsonx.Marshal(msg)
 	req := &reqData{
 		URL:     cfg.URL,
 		Method:  "POST",
@@ -408,7 +407,7 @@ func (s *Webhook) Handle(d Delivery) {
 	// Auto-reply from response {"reply": "..."}
 	if res != nil && len(replies) == 0 {
 		var body struct{ Reply string }
-		if json.Unmarshal([]byte(res.Body), &body) == nil && body.Reply != "" {
+		if jsonx.Unmarshal([]byte(res.Body), &body) == nil && body.Reply != "" {
 			replies = append(replies, replyAction{Text: body.Reply})
 		}
 	}
@@ -426,8 +425,8 @@ func (s *Webhook) Handle(d Delivery) {
 // contentTypeToFileInfo maps Content-Type to (filename, itemType).
 func contentTypeToFileInfo(ct string) (fileName, itemType string) {
 	// Strip parameters (e.g. "image/png; charset=utf-8" → "image/png")
-	if i := strings.Index(ct, ";"); i > 0 {
-		ct = strings.TrimSpace(ct[:i])
+	if base, _, ok := strings.Cut(ct, ";"); ok {
+		ct = strings.TrimSpace(base)
 	}
 
 	// Image types
@@ -470,14 +469,14 @@ func contentTypeToFileInfo(ct string) (fileName, itemType string) {
 
 	// Document types
 	docMap := map[string]string{
-		"application/pdf":  ".pdf",
-		"application/zip":  ".zip",
-		"application/gzip": ".gz",
-		"application/x-tar": ".tar",
-		"application/x-rar-compressed": ".rar",
-		"application/x-7z-compressed":  ".7z",
-		"application/msword":           ".doc",
-		"application/vnd.ms-excel":     ".xls",
+		"application/pdf":               ".pdf",
+		"application/zip":               ".zip",
+		"application/gzip":              ".gz",
+		"application/x-tar":             ".tar",
+		"application/x-rar-compressed":  ".rar",
+		"application/x-7z-compressed":   ".7z",
+		"application/msword":            ".doc",
+		"application/vnd.ms-excel":      ".xls",
 		"application/vnd.ms-powerpoint": ".ppt",
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   ".docx",
 		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         ".xlsx",
@@ -505,7 +504,7 @@ func (s *Webhook) forwardMedia(d Delivery, res *resData) {
 		return
 	}
 
-	itemList, _ := json.Marshal([]map[string]any{{"type": itemType, "file_name": fileName}})
+	itemList, _ := jsonx.Marshal([]map[string]any{{"type": itemType, "file_name": fileName}})
 	s.Store.SaveMessage(&store.Message{
 		BotID:       d.BotDBID,
 		Direction:   "outbound",
@@ -811,7 +810,7 @@ func (s *Webhook) processReplies(d Delivery, res *resData, replies []replyAction
 				slog.Error("webhook reply failed", "channel", d.Channel.ID, "err", err)
 				continue
 			}
-			itemList, _ := json.Marshal([]map[string]any{{"type": "text", "text": r.Text}})
+			itemList, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": r.Text}})
 			s.Store.SaveMessage(&store.Message{
 				BotID: d.BotDBID, Direction: "outbound", ToUserID: d.Message.Sender, MessageType: 2, ItemList: itemList,
 			})
@@ -848,7 +847,7 @@ func (s *Webhook) processReplies(d Delivery, res *resData, replies []replyAction
 			if mime != "" {
 				_, itemType = contentTypeToFileInfo(mime)
 			}
-			itemList, _ := json.Marshal([]map[string]any{{"type": itemType, "file_name": fileName}})
+			itemList, _ := jsonx.Marshal([]map[string]any{{"type": itemType, "file_name": fileName}})
 			s.Store.SaveMessage(&store.Message{
 				BotID: d.BotDBID, Direction: "outbound", ToUserID: d.Message.Sender, MessageType: 2, ItemList: itemList,
 			})
@@ -890,7 +889,7 @@ type webhookPayload struct {
 }
 
 type webhookItem struct {
-	Type     string `json:"type"`               // "text", "image", "voice", "file", "video"
+	Type     string `json:"type"` // "text", "image", "voice", "file", "video"
 	Text     string `json:"text,omitempty"`
 	FileName string `json:"file_name,omitempty"`
 	MediaURL string `json:"media_url,omitempty"` // download URL (MinIO or CDN proxy)
@@ -979,8 +978,8 @@ func isBinaryContentType(ct string) bool {
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",   // .docx
 		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",         // .xlsx
 		"application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
-		"application/msword",        // .doc
-		"application/vnd.ms-excel",  // .xls
+		"application/msword",            // .doc
+		"application/vnd.ms-excel",      // .xls
 		"application/vnd.ms-powerpoint": // .ppt
 		return true
 	}

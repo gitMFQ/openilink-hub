@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -21,7 +21,7 @@ func (s *Server) handleListRegistries(w http.ResponseWriter, r *http.Request) {
 		registries = []store.Registry{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(registries)
+	jsonx.NewEncoder(w).Encode(registries)
 }
 
 // POST /api/admin/registries — add a new registry source
@@ -30,7 +30,7 @@ func (s *Server) handleCreateRegistry(w http.ResponseWriter, r *http.Request) {
 		Name string `json:"name"`
 		URL  string `json:"url"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -76,7 +76,7 @@ func (s *Server) handleCreateRegistry(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(reg)
+	jsonx.NewEncoder(w).Encode(reg)
 }
 
 // PUT /api/admin/registries/{id} — update a registry source (enable/disable)
@@ -86,7 +86,7 @@ func (s *Server) handleUpdateRegistry(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Enabled *bool `json:"enabled"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}

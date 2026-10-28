@@ -3,8 +3,8 @@ package postgres
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 
 	"github.com/google/uuid"
 	"github.com/openilink/openilink-hub/internal/store"
@@ -28,9 +28,9 @@ func scanChannel(scanner interface{ Scan(...any) error }) (*store.Channel, error
 	if err != nil {
 		return nil, err
 	}
-	_ = json.Unmarshal(filterJSON, &c.FilterRule)
-	_ = json.Unmarshal(aiJSON, &c.AIConfig)
-	_ = json.Unmarshal(webhookJSON, &c.WebhookConfig)
+	_ = jsonx.Unmarshal(filterJSON, &c.FilterRule)
+	_ = jsonx.Unmarshal(aiJSON, &c.AIConfig)
+	_ = jsonx.Unmarshal(webhookJSON, &c.WebhookConfig)
 	return c, nil
 }
 
@@ -43,8 +43,8 @@ func (db *DB) CreateChannel(botID, name, handle string, filter *store.FilterRule
 	if ai == nil {
 		ai = &store.AIConfig{}
 	}
-	filterJSON, _ := json.Marshal(filter)
-	aiJSON, _ := json.Marshal(ai)
+	filterJSON, _ := jsonx.Marshal(filter)
+	aiJSON, _ := jsonx.Marshal(ai)
 	_, err := db.Exec(
 		"INSERT INTO channels (id, bot_id, name, handle, ai_config, api_key, filter_rule) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 		id, botID, name, handle, aiJSON, apiKey, filterJSON,
@@ -113,9 +113,9 @@ func (db *DB) ListChannelsByBotIDs(botIDs []string) ([]store.Channel, error) {
 }
 
 func (db *DB) UpdateChannel(id, name, handle string, filter *store.FilterRule, ai *store.AIConfig, webhook *store.WebhookConfig, enabled bool) error {
-	filterJSON, _ := json.Marshal(filter)
-	aiJSON, _ := json.Marshal(ai)
-	webhookJSON, _ := json.Marshal(webhook)
+	filterJSON, _ := jsonx.Marshal(filter)
+	aiJSON, _ := jsonx.Marshal(ai)
+	webhookJSON, _ := jsonx.Marshal(webhook)
 	_, err := db.Exec(
 		`UPDATE channels SET name = $1, handle = $2, filter_rule = $3, ai_config = $4,
 		 webhook_config = $5, enabled = $6, updated_at = $7 WHERE id = $8`,

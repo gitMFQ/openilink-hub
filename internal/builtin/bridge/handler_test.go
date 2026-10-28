@@ -4,7 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -29,7 +29,7 @@ func TestHandler_ForwardEvent(t *testing.T) {
 	inst := &store.AppInstallation{
 		ID:               "inst-123",
 		BotID:            "bot-456",
-		Config:           json.RawMessage(`{"forward_url":"` + ts.URL + `"}`),
+		Config:           jsonx.RawMessage(`{"forward_url":"` + ts.URL + `"}`),
 		AppWebhookSecret: "test-secret",
 	}
 	event := &app.Event{
@@ -51,7 +51,7 @@ func TestHandler_ForwardEvent(t *testing.T) {
 		t.Fatal("expected non-empty body")
 	}
 	var envelope map[string]any
-	if err := json.Unmarshal(receivedBody, &envelope); err != nil {
+	if err := jsonx.Unmarshal(receivedBody, &envelope); err != nil {
 		t.Fatalf("unmarshal body: %v", err)
 	}
 	if envelope["type"] != "event" {
@@ -90,7 +90,7 @@ func TestHandler_ForwardEvent(t *testing.T) {
 func TestHandler_MissingForwardURL(t *testing.T) {
 	inst := &store.AppInstallation{
 		ID:     "inst-123",
-		Config: json.RawMessage(`{}`),
+		Config: jsonx.RawMessage(`{}`),
 	}
 	event := &app.Event{
 		Type: "message.text",
@@ -113,7 +113,7 @@ func TestHandler_ForwardError(t *testing.T) {
 	inst := &store.AppInstallation{
 		ID:               "inst-123",
 		BotID:            "bot-456",
-		Config:           json.RawMessage(`{"forward_url":"` + ts.URL + `"}`),
+		Config:           jsonx.RawMessage(`{"forward_url":"` + ts.URL + `"}`),
 		AppWebhookSecret: "test-secret",
 	}
 	event := &app.Event{
@@ -135,7 +135,7 @@ func TestHandler_InvalidURL(t *testing.T) {
 	inst := &store.AppInstallation{
 		ID:               "inst-123",
 		BotID:            "bot-456",
-		Config:           json.RawMessage(`{"forward_url":"http://192.0.2.1:1"}`),
+		Config:           jsonx.RawMessage(`{"forward_url":"http://192.0.2.1:1"}`),
 		AppWebhookSecret: "test-secret",
 	}
 	event := &app.Event{
@@ -163,12 +163,12 @@ func TestHandler_DoubleEncodedConfig(t *testing.T) {
 	defer ts.Close()
 
 	// Config is a JSON-encoded string (double-encode: the frontend did JSON.stringify twice)
-	doubleEncoded, _ := json.Marshal(`{"forward_url":"` + ts.URL + `"}`)
+	doubleEncoded, _ := jsonx.Marshal(`{"forward_url":"` + ts.URL + `"}`)
 
 	inst := &store.AppInstallation{
 		ID:               "inst-bug",
 		BotID:            "bot-456",
-		Config:           json.RawMessage(doubleEncoded),
+		Config:           jsonx.RawMessage(doubleEncoded),
 		AppWebhookSecret: "test-secret",
 	}
 	event := &app.Event{Type: "message.text", ID: "evt-000"}

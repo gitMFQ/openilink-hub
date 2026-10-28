@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"net/http"
 	"strconv"
 	"time"
@@ -91,7 +91,7 @@ func (s *Server) handleChannelMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"messages":    msgs,
 		"next_cursor": nextCursor,
 	})
@@ -148,9 +148,9 @@ func (s *Server) handleChannelSend(w http.ResponseWriter, r *http.Request) {
 	if content == "" && msg.FileName != "" {
 		content = msg.FileName
 	}
-	itemList, _ := json.Marshal([]map[string]any{{"type": msgType, "text": content}})
+	itemList, _ := jsonx.Marshal([]map[string]any{{"type": msgType, "text": content}})
 	mediaStatus := ""
-	mediaKeys := json.RawMessage(`{}`)
+	mediaKeys := jsonx.RawMessage(`{}`)
 	if len(msg.Data) > 0 && s.ObjectStore != nil {
 		ct := detectContentType(msgType)
 		ext := detectExt(msg.FileName, msgType)
@@ -158,7 +158,7 @@ func (s *Server) handleChannelSend(w http.ResponseWriter, r *http.Request) {
 			time.Now().Format("2006/01/02"), time.Now().UnixMilli(), ext)
 		if _, err := s.ObjectStore.Put(r.Context(), key, ct, msg.Data); err == nil {
 			mediaStatus = "ready"
-			mediaKeys, _ = json.Marshal(map[string]string{"0": key})
+			mediaKeys, _ = jsonx.Marshal(map[string]string{"0": key})
 		}
 	}
 
@@ -173,7 +173,7 @@ func (s *Server) handleChannelSend(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"ok":        true,
 		"client_id": clientID,
 	})
@@ -195,7 +195,7 @@ func (s *Server) handleChannelTyping(w http.ResponseWriter, r *http.Request) {
 		Ticket string `json:"ticket"`
 		Status string `json:"status"` // "typing" or "cancel"
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -229,7 +229,7 @@ func (s *Server) handleChannelConfig(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ContextToken string `json:"context_token"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -247,7 +247,7 @@ func (s *Server) handleChannelConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(cfg)
+	jsonx.NewEncoder(w).Encode(cfg)
 }
 
 // GET /api/v1/channels/status?key=xxx
@@ -268,7 +268,7 @@ func (s *Server) handleChannelStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	jsonx.NewEncoder(w).Encode(map[string]any{
 		"channel_id":   ch.ID,
 		"channel_name": ch.Name,
 		"bot_id":       ch.BotID,

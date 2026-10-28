@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -23,9 +23,9 @@ import (
 
 type mockProvider struct{}
 
-func (m *mockProvider) Name() string                          { return "mock" }
+func (m *mockProvider) Name() string                                       { return "mock" }
 func (m *mockProvider) Start(context.Context, provider.StartOptions) error { return nil }
-func (m *mockProvider) Stop()                                 {}
+func (m *mockProvider) Stop()                                              {}
 func (m *mockProvider) Send(context.Context, provider.OutboundMessage) (string, error) {
 	return "", nil
 }
@@ -97,7 +97,7 @@ func setupMediaTestEnv(t *testing.T) (*httptest.Server, store.Store, *store.Bot,
 	_ = s.UpdateUserStatus(u.ID, store.StatusActive)
 
 	// Create a bot.
-	b, err := s.CreateBot(u.ID, "mediabot", "mock", "", json.RawMessage(`{}`))
+	b, err := s.CreateBot(u.ID, "mediabot", "mock", "", jsonx.RawMessage(`{}`))
 	if err != nil {
 		t.Fatalf("CreateBot: %v", err)
 	}
@@ -111,7 +111,7 @@ func setupMediaTestEnv(t *testing.T) (*httptest.Server, store.Store, *store.Bot,
 	t.Cleanup(mgr.StopAll)
 
 	// Create an app and install it on the bot.
-	scopesJSON, _ := json.Marshal([]string{"message:read"})
+	scopesJSON, _ := jsonx.Marshal([]string{"message:read"})
 	app, err := s.CreateApp(&store.App{
 		OwnerID: u.ID,
 		Name:    "MediaTestApp",
@@ -126,7 +126,7 @@ func setupMediaTestEnv(t *testing.T) (*httptest.Server, store.Store, *store.Bot,
 		t.Fatalf("InstallApp: %v", err)
 	}
 	// Grant message:read scope so Bearer auth passes scope check.
-	if err := s.UpdateInstallation(inst.ID, "", json.RawMessage("{}"), scopesJSON, true); err != nil {
+	if err := s.UpdateInstallation(inst.ID, "", jsonx.RawMessage("{}"), scopesJSON, true); err != nil {
 		t.Fatalf("UpdateInstallation: %v", err)
 	}
 	// Re-read to pick up updated scopes.
@@ -249,7 +249,7 @@ func TestMediaProxy_BearerWrongBot(t *testing.T) {
 	// Create a second bot that the installation does NOT belong to.
 	u, _ := s.CreateUserFull("other", "", "Other", "hashed", store.RoleAdmin)
 	_ = s.UpdateUserStatus(u.ID, store.StatusActive)
-	b2, err := s.CreateBot(u.ID, "otherbot", "mock", "", json.RawMessage(`{}`))
+	b2, err := s.CreateBot(u.ID, "otherbot", "mock", "", jsonx.RawMessage(`{}`))
 	if err != nil {
 		t.Fatalf("CreateBot: %v", err)
 	}
@@ -276,8 +276,8 @@ func TestChannelMedia_BearerDisabledInstallation(t *testing.T) {
 	ts, s, _, inst := setupMediaTestEnv(t)
 
 	// Disable the installation.
-	scopesJSON, _ := json.Marshal([]string{"message:read"})
-	if err := s.UpdateInstallation(inst.ID, "", json.RawMessage("{}"), scopesJSON, false); err != nil {
+	scopesJSON, _ := jsonx.Marshal([]string{"message:read"})
+	if err := s.UpdateInstallation(inst.ID, "", jsonx.RawMessage("{}"), scopesJSON, false); err != nil {
 		t.Fatalf("UpdateInstallation: %v", err)
 	}
 
@@ -298,7 +298,7 @@ func TestChannelMedia_BearerNoScope(t *testing.T) {
 	ts, s, _, inst := setupMediaTestEnv(t)
 
 	// Clear scopes on the installation.
-	if err := s.UpdateInstallation(inst.ID, "", json.RawMessage("{}"), json.RawMessage("[]"), true); err != nil {
+	if err := s.UpdateInstallation(inst.ID, "", jsonx.RawMessage("{}"), jsonx.RawMessage("[]"), true); err != nil {
 		t.Fatalf("UpdateInstallation: %v", err)
 	}
 
@@ -319,8 +319,8 @@ func TestMediaProxy_BearerDisabledInstallation(t *testing.T) {
 	ts, s, b, inst := setupMediaTestEnv(t)
 
 	// Disable the installation.
-	scopesJSON, _ := json.Marshal([]string{"message:read"})
-	if err := s.UpdateInstallation(inst.ID, "", json.RawMessage("{}"), scopesJSON, false); err != nil {
+	scopesJSON, _ := jsonx.Marshal([]string{"message:read"})
+	if err := s.UpdateInstallation(inst.ID, "", jsonx.RawMessage("{}"), scopesJSON, false); err != nil {
 		t.Fatalf("UpdateInstallation: %v", err)
 	}
 
@@ -341,7 +341,7 @@ func TestMediaProxy_BearerNoScope(t *testing.T) {
 	ts, s, b, inst := setupMediaTestEnv(t)
 
 	// Clear scopes on the installation.
-	if err := s.UpdateInstallation(inst.ID, "", json.RawMessage("{}"), json.RawMessage("[]"), true); err != nil {
+	if err := s.UpdateInstallation(inst.ID, "", jsonx.RawMessage("{}"), jsonx.RawMessage("[]"), true); err != nil {
 		t.Fatalf("UpdateInstallation: %v", err)
 	}
 

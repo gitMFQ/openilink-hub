@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"log/slog"
 	"net"
 	"net/http"
@@ -48,11 +48,11 @@ func findHTTPStatus(msg string) string {
 const maxImportTools = 200
 
 var blockedHeaderKeys = map[string]bool{
-	"host":            true,
-	"content-type":    true,
-	"content-length":  true,
+	"host":              true,
+	"content-type":      true,
+	"content-length":    true,
 	"transfer-encoding": true,
-	"connection":      true,
+	"connection":        true,
 }
 
 type mcpImportRequest struct {
@@ -90,7 +90,7 @@ func (s *Server) handleImportMCP(w http.ResponseWriter, r *http.Request) {
 
 	body := http.MaxBytesReader(w, r.Body, 8*1024)
 	var req mcpImportRequest
-	if err := json.NewDecoder(body).Decode(&req); err != nil {
+	if err := jsonx.NewDecoder(body).Decode(&req); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -121,14 +121,13 @@ func (s *Server) handleImportMCP(w http.ResponseWriter, r *http.Request) {
 	slog.Info("mcp import", "url", req.URL, "server", result.ServerName, "tools", len(result.Tools), "truncated", result.Truncated, "duration_ms", time.Since(start).Milliseconds())
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	jsonx.NewEncoder(w).Encode(result)
 }
 
 // classifyImportError maps a discovery failure to an HTTP status and a
 // user-facing message. Returns (status, message, stage-for-logs).
 func classifyImportError(ctx context.Context, err error) (int, string, string) {
-	var ie *importError
-	if errors.As(err, &ie) {
+	if ie, ok := errors.AsType[*importError](err); ok {
 		switch ie.Stage {
 		case "blocked":
 			return http.StatusBadRequest, ie.Detail, ie.Stage
@@ -230,8 +229,7 @@ func shouldFallbackToSSE(parent context.Context, err error) bool {
 	if isLegacySSESignal(err) {
 		return true
 	}
-	var ie *importError
-	if errors.As(err, &ie) && ie.Stage == "timeout" {
+	if ie, ok := errors.AsType[*importError](err); ok && ie.Stage == "timeout" {
 		if dl, ok := parent.Deadline(); ok {
 			return time.Until(dl) >= minFallbackBudget
 		}
@@ -317,7 +315,7 @@ func runDiscovery(ctx context.Context, hubVersion, serverURL string, headers map
 			Description: t.Description,
 		}
 
-		params, err := json.Marshal(t.InputSchema)
+		params, err := jsonx.Marshal(t.InputSchema)
 		if err == nil && len(params) > 0 && string(params) != `{"type":""}` && string(params) != `{"type":"object"}` {
 			appTool.Parameters = params
 		}
@@ -359,8 +357,7 @@ func isTimeoutErr(err error, lowerMsg string) bool {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return true
 	}
-	var ne net.Error
-	if errors.As(err, &ne) && ne.Timeout() {
+	if ne, ok := errors.AsType[net.Error](err); ok && ne.Timeout() {
 		return true
 	}
 	return strings.Contains(lowerMsg, "deadline exceeded") ||
@@ -410,4 +407,3 @@ func wrapTransportError(stage string, err error) error {
 	}
 	return &importError{Stage: stage, Detail: truncate(msg, 200), Err: err}
 }
-

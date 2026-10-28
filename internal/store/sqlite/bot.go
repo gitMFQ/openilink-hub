@@ -1,7 +1,7 @@
 package sqlite
 
 import (
-	"encoding/json"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"strings"
 	"time"
 
@@ -24,18 +24,18 @@ func scanBot(scanner interface{ Scan(...any) error }) (*store.Bot, error) {
 	if err != nil {
 		return nil, err
 	}
-	b.Credentials = json.RawMessage(credStr)
-	b.SyncState = json.RawMessage(syncStr)
+	b.Credentials = jsonx.RawMessage(credStr)
+	b.SyncState = jsonx.RawMessage(syncStr)
 	return b, nil
 }
 
-func (db *DB) CreateBot(userID, name, provider, providerID string, credentials json.RawMessage) (*store.Bot, error) {
+func (db *DB) CreateBot(userID, name, provider, providerID string, credentials jsonx.RawMessage) (*store.Bot, error) {
 	id := uuid.New().String()
 	if name == "" {
 		name = "Bot-" + id[:8]
 	}
 	if credentials == nil {
-		credentials = json.RawMessage(`{}`)
+		credentials = jsonx.RawMessage(`{}`)
 	}
 	_, err := db.Exec(
 		`INSERT INTO bots (id, user_id, name, provider, provider_id, status, credentials)
@@ -99,7 +99,7 @@ func (db *DB) FindBotByCredential(key, value string) (*store.Bot, error) {
 		"SELECT "+botSelectCols+" FROM bots WHERE json_extract(credentials, '$.' || ?) = ?", key, value))
 }
 
-func (db *DB) UpdateBotCredentials(id, providerID string, credentials json.RawMessage) error {
+func (db *DB) UpdateBotCredentials(id, providerID string, credentials jsonx.RawMessage) error {
 	now := db.now()
 	_, err := db.Exec(
 		"UPDATE bots SET credentials = ?, provider_id = ?, status = 'connected', sync_state = '{}', updated_at = ? WHERE id = ?",
@@ -126,7 +126,7 @@ func (db *DB) UpdateBotStatus(id, status string) error {
 	return err
 }
 
-func (db *DB) UpdateBotSyncState(id string, syncState json.RawMessage) error {
+func (db *DB) UpdateBotSyncState(id string, syncState jsonx.RawMessage) error {
 	_, err := db.Exec("UPDATE bots SET sync_state = ?, updated_at = ? WHERE id = ?", syncState, db.now(), id)
 	return err
 }
