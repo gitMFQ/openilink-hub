@@ -3,7 +3,10 @@
 # Usage: curl -fsSL https://raw.githubusercontent.com/openilink/openilink-hub/main/install.sh | sh
 set -e
 
-REPO="openilink/openilink-hub"
+# 默认从上游仓库安装；fork（例如 gitMFQ/openilink-hub）可以用
+#   curl -fsSL .../install.sh | OIH_REPO=owner/repo sh
+# 覆盖，配合 OIH_VERSION 指定自己的发布版本。
+REPO="${OIH_REPO:-openilink/openilink-hub}"
 BINARY="oih"
 INSTALL_DIR="/usr/local/bin"
 
