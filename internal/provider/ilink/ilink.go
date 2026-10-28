@@ -2,7 +2,6 @@ package ilink
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -14,6 +13,8 @@ import (
 	"time"
 
 	ilink "github.com/openilink/openilink-sdk-go"
+
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/provider"
 	"github.com/youthlin/silk"
 )
@@ -56,7 +57,7 @@ func (p *Provider) Status() string {
 
 func (p *Provider) Start(ctx context.Context, opts provider.StartOptions) error {
 	var creds Credentials
-	if err := json.Unmarshal(opts.Credentials, &creds); err != nil {
+	if err := jsonx.Unmarshal(opts.Credentials, &creds); err != nil {
 		return err
 	}
 	p.creds = creds
@@ -71,7 +72,7 @@ func (p *Provider) Start(ctx context.Context, opts provider.StartOptions) error 
 
 	var ss syncState
 	if opts.SyncState != nil {
-		json.Unmarshal(opts.SyncState, &ss)
+		jsonx.Unmarshal(opts.SyncState, &ss)
 	}
 
 	ctx, p.cancel = context.WithCancel(ctx)
@@ -89,7 +90,7 @@ func (p *Provider) Start(ctx context.Context, opts provider.StartOptions) error 
 				im := convertInbound(msg)
 				// Attach raw HTTP response body (contains all messages from this poll)
 				if lastRawBody != nil {
-					im.Raw = json.RawMessage(lastRawBody)
+					im.Raw = jsonx.RawMessage(lastRawBody)
 				}
 				opts.OnMessage(im)
 			}
@@ -97,7 +98,7 @@ func (p *Provider) Start(ctx context.Context, opts provider.StartOptions) error 
 			InitialBuf: ss.SyncBuf,
 			OnBufUpdate: func(buf string) {
 				if opts.OnSyncUpdate != nil {
-					data, _ := json.Marshal(syncState{SyncBuf: buf})
+					data, _ := jsonx.Marshal(syncState{SyncBuf: buf})
 					opts.OnSyncUpdate(data)
 				}
 			},

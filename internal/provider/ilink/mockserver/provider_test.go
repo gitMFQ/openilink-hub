@@ -2,11 +2,11 @@ package mockserver
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/provider"
 )
 
@@ -218,7 +218,7 @@ func TestProviderBind(t *testing.T) {
 	}
 
 	var creds Credentials
-	if err := json.Unmarshal(result.Credentials, &creds); err != nil {
+	if err := jsonx.Unmarshal(result.Credentials, &creds); err != nil {
 		t.Fatalf("unmarshal credentials: %v", err)
 	}
 	if creds.BotToken != "test-token" {
@@ -309,7 +309,7 @@ func TestMockCredentials(t *testing.T) {
 	}
 
 	var creds Credentials
-	if err := json.Unmarshal(raw, &creds); err != nil {
+	if err := jsonx.Unmarshal(raw, &creds); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
 	if creds.BotID != "mock-bot-id" {

@@ -2,11 +2,12 @@ package mockserver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/openilink/openilink-hub/internal/provider"
 	ilink "github.com/openilink/openilink-sdk-go"
+
+	"github.com/openilink/openilink-hub/internal/jsonx"
+	"github.com/openilink/openilink-hub/internal/provider"
 )
 
 func init() {
@@ -51,7 +52,7 @@ func (p *Provider) Start(ctx context.Context, opts provider.StartOptions) error 
 	p.opts = opts
 	var creds Credentials
 	if opts.Credentials != nil {
-		json.Unmarshal(opts.Credentials, &creds)
+		jsonx.Unmarshal(opts.Credentials, &creds)
 	}
 	if creds.BotToken == "" {
 		creds.BotToken = "mock-token"
@@ -83,7 +84,7 @@ func (p *Provider) pollLoop(ctx context.Context) {
 		if result.SyncBuf != "" {
 			buf = result.SyncBuf
 			if p.opts.OnSyncUpdate != nil {
-				data, _ := json.Marshal(map[string]string{"sync_buf": buf})
+				data, _ := jsonx.Marshal(map[string]string{"sync_buf": buf})
 				p.opts.OnSyncUpdate(data)
 			}
 		}
@@ -160,7 +161,7 @@ func (p *Provider) StartBind(ctx context.Context) (*provider.BindSession, error)
 			}
 			pr := &provider.BindPollResult{Status: result.Status}
 			if result.Status == "confirmed" && result.Creds != nil {
-				data, _ := json.Marshal(result.Creds)
+				data, _ := jsonx.Marshal(result.Creds)
 				pr.Credentials = data
 			}
 			return pr, nil
@@ -168,9 +169,9 @@ func (p *Provider) StartBind(ctx context.Context) (*provider.BindSession, error)
 	}, nil
 }
 
-// MockCredentials returns a json.RawMessage with default mock credentials.
-func MockCredentials() json.RawMessage {
-	data, _ := json.Marshal(Credentials{
+// MockCredentials returns a jsonx.RawMessage with default mock credentials.
+func MockCredentials() jsonx.RawMessage {
+	data, _ := jsonx.Marshal(Credentials{
 		BotID: "mock-bot-id", BotToken: "mock-token", ILinkUserID: "mock-user",
 	})
 	return data
@@ -187,7 +188,7 @@ func convertWeixinToInbound(msg *ilink.WeixinMessage) provider.InboundMessage {
 	}
 
 	// Serialize the WeixinMessage as Raw so tests can verify raw storage.
-	raw, _ := json.Marshal(msg)
+	raw, _ := jsonx.Marshal(msg)
 
 	return provider.InboundMessage{
 		ExternalID:   fmt.Sprintf("%d", msg.MessageID),

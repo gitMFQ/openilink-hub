@@ -2,12 +2,13 @@ package ilink
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	ilinkSDK "github.com/openilink/openilink-sdk-go"
+
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/provider"
 )
 
@@ -21,7 +22,20 @@ type bindEntry struct {
 	client *ilinkSDK.Client
 	qrCode string
 	UserID string
-	result *provider.BindPollResult // cached terminal result for reconnecting clients
+	// pollBase overrides the QR polling base URL. It is set when the server
+	// answers "scaned_but_redirect" with a redirect_host.
+	pollBase string
+	result   *provider.BindPollResult // cached terminal result for reconnecting clients
+}
+
+// redirectPollBase maps a QR status to the base URL the next poll must use.
+// Upstream returns "scaned_but_redirect" when the client has to continue
+// polling another host; any other status keeps the current base URL.
+func redirectPollBase(current, status, redirectHost string) string {
+	if status != "scaned_but_redirect" || redirectHost == "" {
+		return current
+	}
+	return "https://" + redirectHost
 }
 
 // StartBind initiates a QR code bind flow.
@@ -61,23 +75,28 @@ func PollBind(ctx context.Context, sessionID string) (*provider.BindPollResult, 
 		return nil, fmt.Errorf("session not found")
 	}
 
-	status, err := entry.client.PollQRStatus(ctx, entry.qrCode)
+	status, err := entry.client.PollQRStatus(ctx, entry.qrCode, entry.pollBase)
 	if err != nil {
 		return nil, err
 	}
 
 	switch status.Status {
+	case "scaned_but_redirect":
+		// Continue polling the host the server pointed us at.
+		entry.pollBase = redirectPollBase(entry.pollBase, status.Status, status.RedirectHost)
+		return &provider.BindPollResult{Status: status.Status}, nil
 	case "wait":
 		return &provider.BindPollResult{Status: "wait"}, nil
 	case "scaned":
 		return &provider.BindPollResult{Status: "scanned"}, nil
 	case "expired":
-		// Refresh QR
+		// Refresh QR (back on the login host).
 		newQR, err := entry.client.FetchQRCode(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("refresh qr: %w", err)
 		}
 		entry.qrCode = newQR.QRCode
+		entry.pollBase = ""
 		return &provider.BindPollResult{Status: "expired", QRURL: newQR.QRCodeImgContent}, nil
 	case "confirmed":
 		if status.ILinkBotID == "" {
@@ -94,7 +113,7 @@ func PollBind(ctx context.Context, sessionID string) (*provider.BindPollResult, 
 			BaseURL:     status.BaseURL,
 			ILinkUserID: status.ILinkUserID,
 		}
-		credsJSON, _ := json.Marshal(creds)
+		credsJSON, _ := jsonx.Marshal(creds)
 
 		result := &provider.BindPollResult{Status: "confirmed", Credentials: credsJSON}
 

@@ -6,13 +6,14 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"io"
 	"net/http"
 	"testing"
 	"time"
 
 	ilink "github.com/openilink/openilink-sdk-go"
+
+	"github.com/openilink/openilink-hub/internal/jsonx"
 )
 
 func TestHTTPGetUpdates(t *testing.T) {
@@ -210,7 +211,7 @@ func TestHTTPQRFlow(t *testing.T) {
 	}
 
 	// 4. Confirm via control endpoint.
-	credsJSON, _ := json.Marshal(Credentials{
+	credsJSON, _ := jsonx.Marshal(Credentials{
 		BotID:       "bot-123",
 		BotToken:    "token-xyz",
 		BaseURL:     "https://test.api/",
@@ -247,7 +248,7 @@ func TestHTTPControlInboundAndSent(t *testing.T) {
 	defer srv.Close()
 
 	// Inject via control endpoint.
-	body, _ := json.Marshal(InboundRequest{Sender: "ext-user", Text: "from control"})
+	body, _ := jsonx.Marshal(InboundRequest{Sender: "ext-user", Text: "from control"})
 	resp, err := http.Post(url+"/mock/inbound", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /mock/inbound error: %v", err)
@@ -264,7 +265,7 @@ func TestHTTPControlInboundAndSent(t *testing.T) {
 	}
 	defer sentResp.Body.Close()
 	var sentMsgs []SentMessage
-	json.NewDecoder(sentResp.Body).Decode(&sentMsgs)
+	jsonx.NewDecoder(sentResp.Body).Decode(&sentMsgs)
 	if len(sentMsgs) != 0 {
 		t.Errorf("sent count = %d, want 0", len(sentMsgs))
 	}
@@ -368,7 +369,7 @@ func TestHTTPControlListMedia(t *testing.T) {
 	defer mediaResp.Body.Close()
 
 	var mediaList []MediaInfo
-	json.NewDecoder(mediaResp.Body).Decode(&mediaList)
+	jsonx.NewDecoder(mediaResp.Body).Decode(&mediaList)
 	if len(mediaList) != 1 {
 		t.Fatalf("media count = %d, want 1", len(mediaList))
 	}

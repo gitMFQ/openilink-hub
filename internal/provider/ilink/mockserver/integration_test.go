@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
 
 	ilink "github.com/openilink/openilink-sdk-go"
 
-	ilinkProvider "github.com/openilink/openilink-hub/internal/provider/ilink"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/provider"
+	ilinkProvider "github.com/openilink/openilink-hub/internal/provider/ilink"
 	"github.com/openilink/openilink-hub/internal/provider/ilink/mockserver"
 )
 
@@ -30,7 +30,7 @@ func TestHTTPModeFullFlow(t *testing.T) {
 	// Create the real iLink provider.
 	p := &ilinkProvider.Provider{}
 
-	creds, _ := json.Marshal(ilinkProvider.Credentials{
+	creds, _ := jsonx.Marshal(ilinkProvider.Credentials{
 		BotToken: "test-token",
 		BaseURL:  url,
 	})
@@ -51,7 +51,7 @@ func TestHTTPModeFullFlow(t *testing.T) {
 			receivedCh <- struct{}{}
 		},
 		OnStatus:     func(string) {},
-		OnSyncUpdate: func(json.RawMessage) {},
+		OnSyncUpdate: func(jsonx.RawMessage) {},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -193,7 +193,7 @@ func TestHTTPModeMediaSendViaProvider(t *testing.T) {
 	// However, we CAN verify that the provider's DownloadMedia works via the
 	// engine by injecting inbound media and then downloading it.
 
-	creds, _ := json.Marshal(ilinkProvider.Credentials{
+	creds, _ := jsonx.Marshal(ilinkProvider.Credentials{
 		BotToken: "test-token",
 		BaseURL:  url,
 	})
@@ -214,7 +214,7 @@ func TestHTTPModeMediaSendViaProvider(t *testing.T) {
 			receivedCh <- struct{}{}
 		},
 		OnStatus:     func(string) {},
-		OnSyncUpdate: func(json.RawMessage) {},
+		OnSyncUpdate: func(jsonx.RawMessage) {},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -288,7 +288,7 @@ func TestHTTPModeMultipleMessages(t *testing.T) {
 	srv.Engine().SetStatus("connected")
 
 	p := &ilinkProvider.Provider{}
-	creds, _ := json.Marshal(ilinkProvider.Credentials{
+	creds, _ := jsonx.Marshal(ilinkProvider.Credentials{
 		BotToken: "test-token",
 		BaseURL:  url,
 	})
@@ -309,7 +309,7 @@ func TestHTTPModeMultipleMessages(t *testing.T) {
 			receivedCh <- struct{}{}
 		},
 		OnStatus:     func(string) {},
-		OnSyncUpdate: func(json.RawMessage) {},
+		OnSyncUpdate: func(jsonx.RawMessage) {},
 	})
 	if err != nil {
 		t.Fatal(err)

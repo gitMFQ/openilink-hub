@@ -5,13 +5,15 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"sync/atomic"
 	"time"
 
 	ilink "github.com/openilink/openilink-sdk-go"
+
+	"github.com/openilink/openilink-hub/internal/jsonx"
 )
 
 var syncCounter atomic.Int64
@@ -71,8 +73,9 @@ done:
 
 	seq := syncCounter.Add(1)
 	return &GetUpdatesResult{
-		Messages: msgs,
-		SyncBuf:  fmt.Sprintf("sync-%d", seq),
+		Messages:             msgs,
+		SyncBuf:              fmt.Sprintf("sync-%d", seq),
+		LongPollingTimeoutMs: e.opts.longPollingTimeoutMs,
 	}, nil
 }
 
@@ -106,6 +109,12 @@ func (e *Engine) Push(recipient, text string) (string, error) {
 
 // SendMessage sends a full WeixinMessage, extracting text and media from items.
 func (e *Engine) SendMessage(msg *ilink.WeixinMessage) error {
+	return e.SendMessageWithMeta(msg, SendMeta{})
+}
+
+// SendMessageWithMeta is SendMessage plus the request-level fields the SDK
+// types cannot carry (msg.run_id, base_info), which the mock records.
+func (e *Engine) SendMessageWithMeta(msg *ilink.WeixinMessage, meta SendMeta) error {
 	var text string
 	for _, item := range msg.ItemList {
 		if item.TextItem != nil {
@@ -116,13 +125,15 @@ func (e *Engine) SendMessage(msg *ilink.WeixinMessage) error {
 
 	clientID := fmt.Sprintf("sdk-%d-%s", e.clock.Now().UnixMilli(), randomHex(4))
 
-	itemsJSON, _ := json.Marshal(msg.ItemList)
+	itemsJSON, _ := jsonx.Marshal(msg.ItemList)
 
 	sm := SentMessage{
 		Recipient:    msg.ToUserID,
 		Text:         text,
 		ContextToken: msg.ContextToken,
 		ClientID:     clientID,
+		RunID:        meta.RunID,
+		BaseInfo:     meta.BaseInfo,
 		Items:        itemsJSON,
 		Timestamp:    e.clock.Now().UnixMilli(),
 	}
@@ -219,20 +230,34 @@ type uploadParamData struct {
 }
 
 // GetUploadURL stores the AES key and returns upload parameters.
+// When a CDN base URL is configured it also returns upload_full_url, which the
+// real server may prefer over upload_param.
 func (e *Engine) GetUploadURL(req *ilink.GetUploadURLReq) (*ilink.GetUploadURLResp, error) {
 	eqp := generateEQP()
 
-	paramJSON, _ := json.Marshal(uploadParamData{
+	paramJSON, _ := jsonx.Marshal(uploadParamData{
 		FileKey: req.FileKey,
 		EQP:     eqp,
 		AESKey:  req.AESKey,
 	})
 	uploadParam := base64.StdEncoding.EncodeToString(paramJSON)
 
-	return &ilink.GetUploadURLResp{
+	resp := &ilink.GetUploadURLResp{
 		Ret:         0,
 		UploadParam: uploadParam,
-	}, nil
+	}
+
+	e.mu.Lock()
+	if e.opts.cdnBaseURL != "" {
+		resp.UploadFullURL = e.opts.cdnBaseURL + "/upload?encrypted_query_param=" +
+			url.QueryEscape(uploadParam) + "&filekey=" + url.QueryEscape(req.FileKey)
+	}
+	// Keep a copy: the caller may reuse the request value.
+	reqCopy := *req
+	e.lastUploadReq = &reqCopy
+	e.mu.Unlock()
+
+	return resp, nil
 }
 
 // UploadToCDN stores ciphertext and returns a download EQP.
@@ -243,7 +268,7 @@ func (e *Engine) UploadToCDN(uploadParam, filekey string, ciphertext []byte) (st
 	}
 
 	var param uploadParamData
-	if err := json.Unmarshal(paramJSON, &param); err != nil {
+	if err := jsonx.Unmarshal(paramJSON, &param); err != nil {
 		return "", fmt.Errorf("unmarshal upload_param: %w", err)
 	}
 
@@ -318,16 +343,31 @@ func (e *Engine) GetConfig(recipient, contextToken string) (*ConfigResult, error
 
 // FetchQRCode creates a new QR login session.
 func (e *Engine) FetchQRCode() (*QRResult, error) {
+	return e.FetchQRCodeWithTokens(nil)
+}
+
+// FetchQRCodeWithTokens creates a QR session, honouring upstream's
+// local_token_list: if one of the tokens is already bound to this mock, the
+// session starts in the "binded_redirect" state instead of "wait".
+func (e *Engine) FetchQRCodeWithTokens(localTokenList []string) (*QRResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
 	qrCode := "mock-qr-" + randomHex(8)
 	session := &qrSession{
 		qrCode: qrCode,
-		state:  "wait",
+		state:  QRStateWait,
 		ch:     make(chan struct{}, 1),
 	}
 
+	for _, tok := range localTokenList {
+		if e.boundTokens[tok] {
+			session.state = QRStateBindedRedirect
+			break
+		}
+	}
+
+	e.lastQRReq.LocalTokenList = append([]string(nil), localTokenList...)
 	e.qr = session
 
 	// Start expiry timer.
@@ -341,8 +381,9 @@ func (e *Engine) FetchQRCode() (*QRResult, error) {
 		<-timer.C
 		e.mu.Lock()
 		defer e.mu.Unlock()
-		if e.qr == session && (session.state == "wait" || session.state == "scanned") {
-			session.state = "expired"
+		if e.qr == session && (session.state == QRStateWait || session.state == QRStateScanned ||
+			session.state == QRStateScaned || session.state == QRStateNeedVerifyCode) {
+			session.state = QRStateExpired
 			select {
 			case session.ch <- struct{}{}:
 			default:
@@ -351,7 +392,7 @@ func (e *Engine) FetchQRCode() (*QRResult, error) {
 	}()
 
 	if e.opts.autoConfirmQR {
-		session.state = "confirmed"
+		session.state = QRStateConfirmed
 		session.creds = Credentials{
 			BotID:       "mock-bot-id",
 			BotToken:    "mock-bot-token",
@@ -371,7 +412,17 @@ func (e *Engine) FetchQRCode() (*QRResult, error) {
 }
 
 // PollQRStatus polls the QR code scan/login status.
-func (e *Engine) PollQRStatus(ctx context.Context, qrCode string) (*QRStatusResult, error) {
+//
+// An optional verify code mirrors upstream's get_qrcode_status?verify_code=:
+// while the session waits for a code the call returns "need_verifycode"
+// immediately, a matching code advances the login, and a mismatch moves the
+// session to "verify_code_blocked".
+func (e *Engine) PollQRStatus(ctx context.Context, qrCode string, verifyCode ...string) (*QRStatusResult, error) {
+	code := ""
+	if len(verifyCode) > 0 {
+		code = verifyCode[0]
+	}
+
 	e.mu.Lock()
 	session := e.qr
 	e.mu.Unlock()
@@ -382,15 +433,32 @@ func (e *Engine) PollQRStatus(ctx context.Context, qrCode string) (*QRStatusResu
 
 	e.mu.Lock()
 	state := session.state
+	redirectHost := session.redirectHost
 	e.mu.Unlock()
 
-	// If already terminal, return immediately.
-	if state == "confirmed" || state == "expired" {
-		if state == "confirmed" {
-			creds := session.creds
-			return &QRStatusResult{Status: state, Creds: &creds}, nil
-		}
+	// States the client must act on are returned without blocking.
+	switch state {
+	case QRStateConfirmed:
+		creds := session.creds
+		return &QRStatusResult{Status: state, Creds: &creds}, nil
+	case QRStateExpired, QRStateVerifyCodeBlocked, QRStateBindedRedirect:
 		return &QRStatusResult{Status: state}, nil
+	case QRStateNeedVerifyCode:
+		if code == "" {
+			drainQRSignal(session)
+			return &QRStatusResult{Status: state}, nil
+		}
+		return e.submitVerifyCode(session, code)
+	case QRStateScanedButRedirect:
+		// One-shot notification: after reporting the redirect host the client
+		// is expected to poll the new host, so the session continues as scanned.
+		e.mu.Lock()
+		if session.state == QRStateScanedButRedirect {
+			session.state = QRStateScanned
+		}
+		e.mu.Unlock()
+		drainQRSignal(session)
+		return &QRStatusResult{Status: QRStateScanedButRedirect, RedirectHost: redirectHost}, nil
 	}
 
 	// Block until state changes or ctx cancelled.
@@ -403,11 +471,43 @@ func (e *Engine) PollQRStatus(ctx context.Context, qrCode string) (*QRStatusResu
 	e.mu.Lock()
 	state = session.state
 	creds := session.creds
+	redirectHost = session.redirectHost
+	if state == QRStateScanedButRedirect {
+		session.state = QRStateScanned
+	}
 	e.mu.Unlock()
 
-	result := &QRStatusResult{Status: state}
-	if state == "confirmed" {
+	result := &QRStatusResult{Status: state, RedirectHost: redirectHost}
+	if state == QRStateConfirmed {
 		result.Creds = &creds
 	}
 	return result, nil
+}
+
+// drainQRSignal drops a pending state-change notification for a state that was
+// already reported, so a later blocking poll does not wake up spuriously.
+func drainQRSignal(session *qrSession) {
+	select {
+	case <-session.ch:
+	default:
+	}
+}
+
+// submitVerifyCode evaluates a verify code against the pending session.
+func (e *Engine) submitVerifyCode(session *qrSession, code string) (*QRStatusResult, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if session.verifyCode != "" && code != session.verifyCode {
+		session.state = QRStateVerifyCodeBlocked
+		return &QRStatusResult{Status: QRStateVerifyCodeBlocked}, nil
+	}
+
+	if session.creds.BotToken != "" {
+		session.state = QRStateConfirmed
+		creds := session.creds
+		return &QRStatusResult{Status: QRStateConfirmed, Creds: &creds}, nil
+	}
+	session.state = QRStateScanned
+	return &QRStatusResult{Status: QRStateScanned}, nil
 }
