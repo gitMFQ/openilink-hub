@@ -1,13 +1,13 @@
 package app
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
 
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/store"
 )
 
@@ -97,33 +97,33 @@ func TestMentionRouting_HandleWithCommand(t *testing.T) {
 			Type      string `json:"type"`
 			Challenge string `json:"challenge"`
 		}
-		if json.Unmarshal(body, &probe) == nil && probe.Type == "url_verification" {
+		if jsonx.Unmarshal(body, &probe) == nil && probe.Type == "url_verification" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{"challenge": probe.Challenge})
+			jsonx.NewEncoder(w).Encode(map[string]string{"challenge": probe.Challenge})
 			return
 		}
 
 		var env eventEnvelope
-		json.Unmarshal(body, &env)
+		jsonx.Unmarshal(body, &env)
 		mu.Lock()
 		receivedEnvelope = &env
 		mu.Unlock()
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"reply": "echo: hello"})
+		jsonx.NewEncoder(w).Encode(map[string]string{"reply": "echo: hello"})
 	}))
 	defer srv.Close()
 
 	// Create dispatcher with mock store and deliver event
 	secret := "echo-secret"
 	inst := &store.AppInstallation{
-		ID:            "inst-echo-1",
-		AppID:         "app-echo-1",
-		BotID:         "bot-echo-1",
-		Handle:        "echo-work",
+		ID:               "inst-echo-1",
+		AppID:            "app-echo-1",
+		BotID:            "bot-echo-1",
+		Handle:           "echo-work",
 		AppWebhookSecret: secret,
 		AppWebhookURL:    srv.URL,
-		Enabled:       true,
+		Enabled:          true,
 	}
 
 	d := newTestDispatcher(&mockLogDB{}, srv.Client())
@@ -169,8 +169,8 @@ func TestMentionRouting_HandleWithCommand(t *testing.T) {
 	data, ok := env.Event.Data.(map[string]any)
 	if !ok {
 		// Data was JSON-unmarshaled, might need re-marshal/unmarshal
-		raw, _ := json.Marshal(env.Event.Data)
-		json.Unmarshal(raw, &data)
+		raw, _ := jsonx.Marshal(env.Event.Data)
+		jsonx.Unmarshal(raw, &data)
 	}
 	if data != nil {
 		if cmd, _ := data["command"].(string); cmd != "/echo" {

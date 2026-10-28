@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/store"
 )
 
@@ -143,7 +143,7 @@ func TestDeliverEvent_Success(t *testing.T) {
 
 	// Verify envelope structure.
 	var envelope eventEnvelope
-	if err := json.Unmarshal(receivedBody, &envelope); err != nil {
+	if err := jsonx.Unmarshal(receivedBody, &envelope); err != nil {
 		t.Fatalf("unmarshal envelope: %v", err)
 	}
 	if envelope.V != envelopeVersion {
@@ -211,7 +211,7 @@ func TestDeliverEvent_CommandEnvelopeType(t *testing.T) {
 	}
 
 	var envelope eventEnvelope
-	json.Unmarshal(receivedBody, &envelope)
+	jsonx.Unmarshal(receivedBody, &envelope)
 	if envelope.Type != "event" {
 		t.Errorf("envelope.Type = %q, want %q", envelope.Type, "event")
 	}
@@ -220,7 +220,7 @@ func TestDeliverEvent_CommandEnvelopeType(t *testing.T) {
 func TestDeliverEvent_SyncReply(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		json.NewEncoder(w).Encode(map[string]string{
+		jsonx.NewEncoder(w).Encode(map[string]string{
 			"reply":      "Hello from app!",
 			"reply_type": "markdown",
 		})
@@ -247,7 +247,7 @@ func TestDeliverEvent_SyncReply(t *testing.T) {
 func TestDeliverEvent_SyncReplyDefaultType(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		json.NewEncoder(w).Encode(map[string]string{"reply": "hi"})
+		jsonx.NewEncoder(w).Encode(map[string]string{"reply": "hi"})
 	}))
 	defer srv.Close()
 

@@ -47,9 +47,15 @@ curl -X POST http://localhost:9801/mock/event \
 curl -X POST http://localhost:9801/mock/event \
   -d '{"sender":"user_alice","content":"@test-app what is the weather?"}'
 
-# Slash command (matches app tools)
+# Command (matches app tools); the "/" prefix is optional
 curl -X POST http://localhost:9801/mock/event \
+  -H "Content-Type: application/json" \
   -d '{"sender":"user_alice","content":"/search hello world"}'
+
+# Bare command form -> same "command" event
+curl -X POST http://localhost:9801/mock/event \
+  -H "Content-Type: application/json" \
+  -d '{"sender":"user_alice","content":"search hello world"}'
 
 # Group message
 curl -X POST http://localhost:9801/mock/event \
@@ -188,7 +194,7 @@ Two directions:
 | `message.voice` | Voice message |
 | `message.video` | Video message |
 | `message.file` | File message |
-| `command` | Slash command or AI tool call |
+| `command` | Command trigger (`/cmd` or bare `cmd`) or AI tool call |
 
 #### Command Event Data
 
@@ -406,7 +412,7 @@ Tools define slash commands and AI-callable functions:
 
 - `name`: Tool identifier
 - `description`: What it does (used by AI for tool selection)
-- `command`: Slash command trigger without `/` prefix (optional)
+- `command`: Command trigger without `/` prefix (optional); users may send `/cmd` or bare `cmd`
 - `parameters`: JSON Schema for structured parameters (optional)
 
 ### Scopes

@@ -2,12 +2,12 @@ package bot
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
 	appdelivery "github.com/openilink/openilink-hub/internal/app"
 	"github.com/openilink/openilink-hub/internal/builtin"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/provider"
 	"github.com/openilink/openilink-hub/internal/relay"
 	"github.com/openilink/openilink-hub/internal/store"
@@ -307,9 +307,9 @@ func TestDeliverToApps_WSAndBuiltinBothFire(t *testing.T) {
 		ID:       appID,
 		Slug:     appSlug,
 		Registry: "builtin",
-		Events:   json.RawMessage(`["message"]`),
-		Scopes:   json.RawMessage(`["message:read","message:write"]`),
-		Tools:    json.RawMessage(`[]`),
+		Events:   jsonx.RawMessage(`["message"]`),
+		Scopes:   jsonx.RawMessage(`["message:read","message:write"]`),
+		Tools:    jsonx.RawMessage(`[]`),
 		Status:   "active",
 	})
 	ms.AddInstallation(&store.AppInstallation{
@@ -319,7 +319,7 @@ func TestDeliverToApps_WSAndBuiltinBothFire(t *testing.T) {
 		AppSlug:     appSlug,
 		AppRegistry: "builtin",
 		AppToken:    "tok-ws-priority",
-		Scopes:      json.RawMessage(`["message:read","message:write"]`),
+		Scopes:      jsonx.RawMessage(`["message:read","message:write"]`),
 		Enabled:     true,
 	})
 
@@ -342,7 +342,7 @@ func TestDeliverToApps_WSAndBuiltinBothFire(t *testing.T) {
 	select {
 	case data := <-sendCh:
 		var env map[string]any
-		if err := json.Unmarshal(data, &env); err != nil {
+		if err := jsonx.Unmarshal(data, &env); err != nil {
 			t.Fatalf("unmarshal ws payload: %v", err)
 		}
 		if env["type"] != "event" {
@@ -384,9 +384,9 @@ func TestDeliverToApps_BuiltinHandlerWhenNoWS(t *testing.T) {
 		ID:       appID,
 		Slug:     appSlug,
 		Registry: "builtin",
-		Events:   json.RawMessage(`["message"]`),
-		Scopes:   json.RawMessage(`["message:read","message:write"]`),
-		Tools:    json.RawMessage(`[]`),
+		Events:   jsonx.RawMessage(`["message"]`),
+		Scopes:   jsonx.RawMessage(`["message:read","message:write"]`),
+		Tools:    jsonx.RawMessage(`[]`),
 		Status:   "active",
 	})
 	ms.AddInstallation(&store.AppInstallation{
@@ -396,7 +396,7 @@ func TestDeliverToApps_BuiltinHandlerWhenNoWS(t *testing.T) {
 		AppSlug:     appSlug,
 		AppRegistry: "builtin",
 		AppToken:    "tok-no-ws",
-		Scopes:      json.RawMessage(`["message:read","message:write"]`),
+		Scopes:      jsonx.RawMessage(`["message:read","message:write"]`),
 		Enabled:     true,
 	})
 
@@ -452,7 +452,7 @@ func TestTryDeliverMention_UnicodeWhitespace(t *testing.T) {
 	select {
 	case data := <-sendCh:
 		var env map[string]any
-		if err := json.Unmarshal(data, &env); err != nil {
+		if err := jsonx.Unmarshal(data, &env); err != nil {
 			t.Fatalf("unmarshal ws payload: %v", err)
 		}
 		ev, _ := env["event"].(map[string]any)

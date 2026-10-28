@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/store"
 )
 
@@ -24,11 +24,11 @@ type receivedEvent struct {
 
 // mockAppServer simulates an external App that receives events from the Hub.
 type mockAppServer struct {
-	mu       sync.Mutex
-	events   []receivedEvent
-	secret   string
-	replyFn  func(env eventEnvelope) any
-	server   *httptest.Server
+	mu      sync.Mutex
+	events  []receivedEvent
+	secret  string
+	replyFn func(env eventEnvelope) any
+	server  *httptest.Server
 }
 
 func newMockAppServer(secret string, replyFn func(eventEnvelope) any) *mockAppServer {
@@ -48,14 +48,14 @@ func (m *mockAppServer) handler(w http.ResponseWriter, r *http.Request) {
 		Type      string `json:"type"`
 		Challenge string `json:"challenge"`
 	}
-	if json.Unmarshal(body, &probe) == nil && probe.Type == "url_verification" {
+	if jsonx.Unmarshal(body, &probe) == nil && probe.Type == "url_verification" {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"challenge": probe.Challenge})
+		jsonx.NewEncoder(w).Encode(map[string]string{"challenge": probe.Challenge})
 		return
 	}
 
 	var env eventEnvelope
-	json.Unmarshal(body, &env)
+	jsonx.Unmarshal(body, &env)
 
 	re := receivedEvent{
 		Headers:  r.Header.Clone(),
@@ -84,7 +84,7 @@ func (m *mockAppServer) handler(w http.ResponseWriter, r *http.Request) {
 	if m.replyFn != nil {
 		reply := m.replyFn(env)
 		if reply != nil {
-			json.NewEncoder(w).Encode(reply)
+			jsonx.NewEncoder(w).Encode(reply)
 			return
 		}
 	}
@@ -110,7 +110,7 @@ func TestMockApp_URLVerification(t *testing.T) {
 	defer m.close()
 
 	challenge := "test-challenge-123"
-	payload, _ := json.Marshal(map[string]string{
+	payload, _ := jsonx.Marshal(map[string]string{
 		"type":      "url_verification",
 		"challenge": challenge,
 	})
@@ -126,7 +126,7 @@ func TestMockApp_URLVerification(t *testing.T) {
 	}
 
 	var result map[string]string
-	json.NewDecoder(resp.Body).Decode(&result)
+	jsonx.NewDecoder(resp.Body).Decode(&result)
 	if result["challenge"] != challenge {
 		t.Errorf("challenge = %q, want %q", result["challenge"], challenge)
 	}
@@ -310,9 +310,9 @@ func TestMockApp_FullFlowWithMatchAndDeliver(t *testing.T) {
 	})
 	defer m.close()
 
-	cmds, _ := json.Marshal([]store.AppTool{{Name: "run_deploy", Command: "deploy"}})
-	events, _ := json.Marshal([]string{"message"})
-	scopes, _ := json.Marshal([]string{"message:read"})
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "run_deploy", Command: "deploy"}})
+	events, _ := jsonx.Marshal([]string{"message"})
+	scopes, _ := jsonx.Marshal([]string{"message:read"})
 
 	store := &mockAppStore{
 		installations: []store.AppInstallation{

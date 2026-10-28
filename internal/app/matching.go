@@ -1,13 +1,13 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/store"
 )
 
@@ -28,10 +28,11 @@ func SplitFirstField(s string) (first, rest string) {
 // ParseMention extracts handle, command, and text from @handle messages.
 // Returns handle, command (with / prefix or empty), remaining text.
 // Examples:
-//   "@echo-work hello"          → "echo-work", "", "hello"
-//   "@echo-work /echo hello"    → "echo-work", "/echo", "hello"
-//   "@echo-work"                → "echo-work", "", ""
-//   "hello"                     → "", "", ""
+//
+//	"@echo-work hello"          → "echo-work", "", "hello"
+//	"@echo-work /echo hello"    → "echo-work", "/echo", "hello"
+//	"@echo-work"                → "echo-work", "", ""
+//	"hello"                     → "", "", ""
 func ParseMention(content string) (handle, command, text string) {
 	content = strings.TrimSpace(content)
 	if !strings.HasPrefix(content, "@") {
@@ -63,9 +64,31 @@ func (d *Dispatcher) MatchHandle(botID, handle string) (*store.AppInstallation, 
 	return inst, nil
 }
 
-// MatchCommand parses a slash command from the message content and finds
+// InstallationSupportsCommand reports whether the installation registers the
+// given command trigger, case-insensitively. Installation-level tools are
+// checked first: marketplace/builtin apps (e.g. Runner) register their commands
+// per installation, while local apps keep them on the shared app record.
+func (d *Dispatcher) InstallationSupportsCommand(inst *store.AppInstallation, name string) bool {
+	if inst == nil || name == "" {
+		return false
+	}
+	if instHasCommand(inst, name) {
+		return true
+	}
+	app, err := d.store().GetApp(inst.AppID)
+	if err != nil || app == nil {
+		return false
+	}
+	return appHasCommand(app, name)
+}
+
+// MatchCommand parses a command from the message content and finds
 // installations on the given bot whose app has registered that command.
-// Content format: "/commandname args..." or "@bothandle /commandname args..."
+// Content formats: "/commandname args...", "commandname args...", or
+// "@bothandle /commandname args...".
+// A bare "commandname args..." is only a candidate: it matches nothing unless an
+// enabled installation registers that exact trigger, so ordinary chat text
+// still falls through to the message.* flow.
 // Returns matching installations, the parsed command name (without "/"), and
 // the remaining args string.
 func (d *Dispatcher) MatchCommand(botID string, content string) ([]store.AppInstallation, string, string, error) {
@@ -143,12 +166,20 @@ func (d *Dispatcher) MatchEvent(botID string, eventType string) ([]store.AppInst
 	return matched, nil
 }
 
-// parseCommand extracts a command name and args from message content.
+// parseCommand extracts a command candidate and its args from message content.
 // Recognizes formats like:
 //   - "/command arg1 arg2"
+//   - "command arg1 arg2" (bare form, "/" optional)
 //   - "@mention /command arg1 arg2"
 //
-// Returns empty command if no slash command is found.
+// The bare form is only a candidate — MatchCommand still requires the name to
+// match a command trigger registered by an enabled installation, so ordinary
+// chat text does not turn into a command event. Messages that open with an
+// @mention keep the legacy rule (the command must carry the "/" prefix):
+// mention routing runs first, and an unresolvable handle must not promote
+// arbitrary text to a command.
+//
+// Returns an empty command if no candidate is found.
 func parseCommand(content string) (string, string) {
 	content = strings.TrimSpace(content)
 	if content == "" {
@@ -156,6 +187,7 @@ func parseCommand(content string) (string, string) {
 	}
 
 	// Skip leading @mention if present.
+	afterMention := false
 	if strings.HasPrefix(content, "@") {
 		_, rest := SplitFirstField(content[1:])
 		if rest == "" {
@@ -163,20 +195,29 @@ func parseCommand(content string) (string, string) {
 			return "", ""
 		}
 		content = rest
+		afterMention = true
 	}
 
-	// Must start with "/" to be a command.
-	if !strings.HasPrefix(content, "/") {
+	if strings.HasPrefix(content, "/") {
+		// Split into command and args (strip leading "/").
+		command, args := SplitFirstField(content[1:])
+		command = strings.ToLower(command)
+		if command == "" {
+			return "", ""
+		}
+		return command, args
+	}
+
+	if afterMention {
 		return "", ""
 	}
 
-	// Split into command and args (strip leading "/").
-	command, args := SplitFirstField(content[1:])
+	// Bare form: the first field is a command candidate without "/".
+	command, args := SplitFirstField(content)
 	command = strings.ToLower(command)
 	if command == "" {
 		return "", ""
 	}
-
 	return command, args
 }
 
@@ -187,7 +228,7 @@ func appHasCommand(app *store.App, commandName string) bool {
 	}
 
 	var tools []store.AppTool
-	if err := json.Unmarshal(app.Tools, &tools); err != nil {
+	if err := jsonx.Unmarshal(app.Tools, &tools); err != nil {
 		slog.Error("failed to unmarshal app tools",
 			"app_id", app.ID, "err", err)
 		return false
@@ -210,7 +251,7 @@ func instHasCommand(inst *store.AppInstallation, commandName string) bool {
 		return false
 	}
 	var tools []store.AppTool
-	if err := json.Unmarshal(inst.Tools, &tools); err != nil {
+	if err := jsonx.Unmarshal(inst.Tools, &tools); err != nil {
 		return false
 	}
 	for _, t := range tools {
@@ -231,7 +272,7 @@ func instHasScope(inst *store.AppInstallation, scope string) bool {
 		return false // no scopes granted
 	}
 	var scopes []string
-	if err := json.Unmarshal(inst.Scopes, &scopes); err != nil {
+	if err := jsonx.Unmarshal(inst.Scopes, &scopes); err != nil {
 		return false
 	}
 	for _, s := range scopes {
@@ -248,7 +289,7 @@ func appHasScope(app *store.App, scope string) bool {
 		return false
 	}
 	var scopes []string
-	if err := json.Unmarshal(app.Scopes, &scopes); err != nil {
+	if err := jsonx.Unmarshal(app.Scopes, &scopes); err != nil {
 		return false
 	}
 	for _, s := range scopes {
@@ -267,7 +308,7 @@ func appSubscribesToEvent(app *store.App, eventType string) bool {
 	}
 
 	var events []string
-	if err := json.Unmarshal(app.Events, &events); err != nil {
+	if err := jsonx.Unmarshal(app.Events, &events); err != nil {
 		slog.Error("failed to unmarshal app events",
 			"app_id", app.ID, "err", err)
 		return false
@@ -284,4 +325,3 @@ func appSubscribesToEvent(app *store.App, eventType string) bool {
 	}
 	return false
 }
-

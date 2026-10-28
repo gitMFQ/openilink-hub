@@ -2,7 +2,6 @@ package bot
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/url"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	appdelivery "github.com/openilink/openilink-hub/internal/app"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/provider"
 	"github.com/openilink/openilink-hub/internal/push"
 	"github.com/openilink/openilink-hub/internal/relay"
@@ -27,10 +27,10 @@ type Manager struct {
 	instances map[string]*Instance
 	store     store.Store
 	hub       *relay.Hub
-	aiSink    *sink.AI            // AI sink (bot-level)
-	storage   storage.Store       // optional, for media files
-	baseURL   string              // Hub origin for proxy URLs
-	dlSem     chan struct{}        // semaphore for concurrent media downloads
+	aiSink    *sink.AI                // AI sink (bot-level)
+	storage   storage.Store           // optional, for media files
+	baseURL   string                  // Hub origin for proxy URLs
+	dlSem     chan struct{}           // semaphore for concurrent media downloads
 	appDisp   *appdelivery.Dispatcher // app event delivery
 	appWSHub  *appdelivery.WSHub      // app WebSocket connections
 	pushHub   *push.Hub               // browser push WebSocket
@@ -116,7 +116,7 @@ func (m *Manager) StartBot(ctx context.Context, bot *store.Bot) error {
 			}
 			m.onStatusChange(inst, status)
 		},
-		OnSyncUpdate: func(state json.RawMessage) {
+		OnSyncUpdate: func(state jsonx.RawMessage) {
 			if err := m.store.UpdateBotSyncState(bot.ID, state); err != nil {
 				slog.Error("update sync state failed", "bot", bot.ID, "err", err)
 			}
@@ -226,7 +226,7 @@ func (m *Manager) RetryMediaDownload(msgID int64) error {
 
 	// Extract media params from item_list
 	var items []provider.MessageItem
-	if err := json.Unmarshal(msg.ItemList, &items); err != nil || len(items) == 0 {
+	if err := jsonx.Unmarshal(msg.ItemList, &items); err != nil || len(items) == 0 {
 		return fmt.Errorf("no items in message")
 	}
 	var mediaItem *provider.MessageItem
@@ -274,7 +274,7 @@ func (m *Manager) RetryMediaDownload(msgID int64) error {
 			keys["0"] = item.Media.URL
 			status = "ready"
 		}
-		keysJSON, _ := json.Marshal(keys)
+		keysJSON, _ := jsonx.Marshal(keys)
 		m.store.UpdateMediaStatusByID(msgID, status, keysJSON)
 		slog.Info("media retry done", "msgID", msgID, "status", status)
 	}()
@@ -428,9 +428,9 @@ func (m *Manager) parseMessage(msg provider.InboundMessage) parsedMessage {
 
 // buildDBMessage creates a store.Message from provider message, mirroring WeChat structure.
 func (m *Manager) buildDBMessage(botDBID string, channelID *string, msg provider.InboundMessage, p parsedMessage) *store.Message {
-	var raw *json.RawMessage
+	var raw *jsonx.RawMessage
 	if msg.Raw != nil {
-		r := json.RawMessage(msg.Raw)
+		r := jsonx.RawMessage(msg.Raw)
 		raw = &r
 	}
 
@@ -441,7 +441,7 @@ func (m *Manager) buildDBMessage(botDBID string, channelID *string, msg provider
 	}
 
 	// item_list: store provider items as JSON
-	itemList, _ := json.Marshal(msg.Items)
+	itemList, _ := jsonx.Marshal(msg.Items)
 
 	mediaStatus := ""
 	if p.hasMedia {
@@ -457,7 +457,7 @@ func (m *Manager) buildDBMessage(botDBID string, channelID *string, msg provider
 		ToUserID:     msg.Recipient,
 		CreateTimeMs: &msg.Timestamp,
 		SessionID:    msg.SessionID,
-		GroupID:       msg.GroupID,
+		GroupID:      msg.GroupID,
 		MessageState: msg.MessageState,
 		ItemList:     itemList,
 		ContextToken: msg.ContextToken,
@@ -584,7 +584,7 @@ func rebuildInbound(dbm *store.Message) provider.InboundMessage {
 	// Reconstruct provider items from stored item_list JSON
 	var items []provider.MessageItem
 	if len(dbm.ItemList) > 0 {
-		json.Unmarshal(dbm.ItemList, &items)
+		jsonx.Unmarshal(dbm.ItemList, &items)
 	}
 
 	return provider.InboundMessage{
@@ -640,13 +640,12 @@ func (m *Manager) downloadMedia(inst *Instance, msg provider.InboundMessage, msg
 		}
 	}
 
-	keysJSON, _ := json.Marshal(keys)
+	keysJSON, _ := jsonx.Marshal(keys)
 	if err := m.store.UpdateMediaStatus(inst.DBID, status, keysJSON); err != nil {
 		slog.Error("media status update failed", "bot", inst.DBID, "err", err)
 	}
 	slog.Info("media download done", "bot", inst.DBID, "msg", msg.ExternalID, "status", status)
 }
-
 
 // deliverToAI runs the AI sink at bot level, independent of channel matching.
 func (m *Manager) deliverToAI(inst *Instance, msg provider.InboundMessage, p parsedMessage, msgID int64, tracer *store.Tracer, rootSpan *store.SpanBuilder) {
@@ -810,7 +809,6 @@ func mediaContentType(itemType string) string {
 		return "application/octet-stream"
 	}
 }
-
 
 func convertRelayItem(item provider.MessageItem) relay.MessageItem {
 	ri := relay.MessageItem{

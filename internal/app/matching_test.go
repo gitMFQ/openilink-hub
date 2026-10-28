@@ -1,10 +1,10 @@
 package app
 
 import (
-	"encoding/json"
 	"errors"
 	"testing"
 
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/store"
 )
 
@@ -65,10 +65,14 @@ func TestParseCommand(t *testing.T) {
 		{"mention then command no args", "@bot /status", "status", ""},
 		{"mention only", "@github", "", ""},
 		{"empty string", "", "", ""},
-		{"no slash prefix", "hello world", "", ""},
+		{"bare form without slash", "hello world", "hello", "world"},
+		{"bare form single token", "hn", "hn", ""},
+		{"bare form uppercased", "GitHub PRs", "github", "PRs"},
+		{"bare form keeps inner spacing", "cmd  arg1  arg2", "cmd", "arg1  arg2"},
 		{"slash only", "/", "", ""},
 		{"mention with space no command", "@bot hello", "", ""},
 		{"leading whitespace", "  /cmd arg", "cmd", "arg"},
+		{"leading whitespace bare form", "  cmd arg", "cmd", "arg"},
 		{"uppercase command lowered", "/GitHub PRs", "github", "PRs"},
 		{"multiple spaces in args", "/cmd  arg1  arg2", "arg1  arg2", ""},
 	}
@@ -106,7 +110,7 @@ func TestParseCommandMentionFormats(t *testing.T) {
 // --- appHasCommand tests ---
 
 func TestAppHasCommand(t *testing.T) {
-	tools, _ := json.Marshal([]store.AppTool{
+	tools, _ := jsonx.Marshal([]store.AppTool{
 		{Name: "list_prs", Command: "github"},
 		{Name: "run_deploy", Command: "Deploy"},
 		{Name: "no_slash_tool", Description: "tool without command trigger"},
@@ -144,7 +148,7 @@ func TestAppHasCommand_EmptyTools(t *testing.T) {
 }
 
 func TestAppHasCommand_InvalidJSON(t *testing.T) {
-	app := &store.App{Tools: json.RawMessage(`invalid`)}
+	app := &store.App{Tools: jsonx.RawMessage(`invalid`)}
 	if appHasCommand(app, "cmd") {
 		t.Error("invalid JSON should return false")
 	}
@@ -153,17 +157,17 @@ func TestAppHasCommand_InvalidJSON(t *testing.T) {
 // --- appSubscribesToEvent tests ---
 
 func TestAppSubscribesToEvent(t *testing.T) {
-	events, _ := json.Marshal([]string{"message", "reaction.added"})
+	events, _ := jsonx.Marshal([]string{"message", "reaction.added"})
 	app := &store.App{ID: "a1", Events: events}
 
 	tests := []struct {
 		eventType string
 		want      bool
 	}{
-		{"message", true},          // exact match
-		{"message.text", true},     // wildcard match
-		{"message.image", true},    // wildcard match
-		{"reaction.added", true},   // exact match
+		{"message", true},        // exact match
+		{"message.text", true},   // wildcard match
+		{"message.image", true},  // wildcard match
+		{"reaction.added", true}, // exact match
 		{"reaction.removed", false},
 		{"unknown", false},
 	}
@@ -192,7 +196,7 @@ func TestAppSubscribesToEvent_EmptyEvents(t *testing.T) {
 }
 
 func TestAppSubscribesToEvent_InvalidJSON(t *testing.T) {
-	app := &store.App{Events: json.RawMessage(`bad`)}
+	app := &store.App{Events: jsonx.RawMessage(`bad`)}
 	if appSubscribesToEvent(app, "message") {
 		t.Error("invalid JSON should return false")
 	}
@@ -201,7 +205,7 @@ func TestAppSubscribesToEvent_InvalidJSON(t *testing.T) {
 // --- MatchCommand tests ---
 
 func TestMatchCommand_Success(t *testing.T) {
-	cmds, _ := json.Marshal([]store.AppTool{{Name: "list_prs", Command: "github"}})
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "list_prs", Command: "github"}})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, AppWebhookURL: "http://example.com"},
@@ -228,7 +232,7 @@ func TestMatchCommand_Success(t *testing.T) {
 }
 
 func TestMatchCommand_NoMatch(t *testing.T) {
-	cmds, _ := json.Marshal([]store.AppTool{{Name: "list_prs", Command: "github"}})
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "list_prs", Command: "github"}})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, AppWebhookURL: "http://example.com"},
@@ -249,7 +253,7 @@ func TestMatchCommand_NoMatch(t *testing.T) {
 }
 
 func TestMatchCommand_DisabledInstallation(t *testing.T) {
-	cmds, _ := json.Marshal([]store.AppTool{{Name: "run_cmd", Command: "cmd"}})
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "run_cmd", Command: "cmd"}})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: false, AppWebhookURL: "http://example.com"},
@@ -267,7 +271,7 @@ func TestMatchCommand_DisabledInstallation(t *testing.T) {
 }
 
 func TestMatchCommand_NoRequestURL(t *testing.T) {
-	cmds, _ := json.Marshal([]store.AppTool{{Name: "run_cmd", Command: "cmd"}})
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "run_cmd", Command: "cmd"}})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, AppWebhookURL: ""},
@@ -285,20 +289,154 @@ func TestMatchCommand_NoRequestURL(t *testing.T) {
 }
 
 func TestMatchCommand_NotACommand(t *testing.T) {
+	// "hello world" is a bare-form *candidate* ("hello"), but no enabled
+	// installation registers that trigger, so nothing is matched and the
+	// candidate carries no installations — the caller falls through to the
+	// message.* flow.
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "list_prs", Command: "github"}})
 	store := &mockAppStore{
-		installations: []store.AppInstallation{},
-		apps:          map[string]*store.App{},
+		installations: []store.AppInstallation{
+			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true},
+		},
+		apps: map[string]*store.App{"a1": {ID: "a1", Tools: cmds}},
 	}
 	d := newMatchDispatcher(store)
 	matched, cmd, _, err := d.MatchCommand("b1", "hello world")
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
-	if cmd != "" {
-		t.Errorf("cmd = %q, want empty", cmd)
+	if cmd != "hello" {
+		t.Errorf("cmd = %q, want %q (bare candidate)", cmd, "hello")
 	}
-	if matched != nil {
-		t.Error("matched should be nil for non-command content")
+	if len(matched) != 0 {
+		t.Errorf("matched %d installations, want 0 for non-trigger content", len(matched))
+	}
+}
+
+// TestMatchCommand_BareForm covers the "/"-optional behavior: a bare first word
+// that exactly matches a registered command trigger (case-insensitively) is
+// routed as a command; anything else matches nothing.
+func TestMatchCommand_BareForm(t *testing.T) {
+	cmds, _ := jsonx.Marshal([]store.AppTool{
+		{Name: "list_prs", Command: "github"},
+		{Name: "run_deploy", Command: "Deploy"},
+	})
+	store := &mockAppStore{
+		installations: []store.AppInstallation{
+			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true},
+		},
+		apps: map[string]*store.App{"a1": {ID: "a1", Tools: cmds}},
+	}
+
+	tests := []struct {
+		name      string
+		content   string
+		wantCmd   string
+		wantArgs  string
+		wantMatch bool
+	}{
+		{"slash form still works", "/github list PRs", "github", "list PRs", true},
+		{"bare form", "github list PRs", "github", "list PRs", true},
+		{"bare form no args", "github", "github", "", true},
+		{"bare form case insensitive", "GITHUB", "github", "", true},
+		{"bare form mixed case trigger", "deploy prod", "deploy", "prod", true},
+		{"bare form unicode whitespace", "github\u2005list PRs", "github", "list PRs", true},
+		{"bare form full-width whitespace", "github\u3000list", "github", "list", true},
+		{"bare non-trigger", "hello world", "hello", "world", false},
+		{"bare tool name without command trigger", "list_prs", "list_prs", "", false},
+		{"mention then bare word is not a command", "@bot github list", "", "", false},
+		{"slash unknown command matches nothing", "/unknown foo", "unknown", "foo", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			matched, cmd, args, err := newMatchDispatcher(store).MatchCommand("b1", tt.content)
+			if err != nil {
+				t.Fatalf("error: %v", err)
+			}
+			if cmd != tt.wantCmd {
+				t.Errorf("cmd = %q, want %q", cmd, tt.wantCmd)
+			}
+			if args != tt.wantArgs {
+				t.Errorf("args = %q, want %q", args, tt.wantArgs)
+			}
+			if got := len(matched) > 0; got != tt.wantMatch {
+				t.Errorf("matched = %v, want %v", got, tt.wantMatch)
+			}
+		})
+	}
+}
+
+func TestMatchCommand_BareFormDisabledInstallation(t *testing.T) {
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "run_cmd", Command: "cmd"}})
+	store := &mockAppStore{
+		installations: []store.AppInstallation{
+			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: false},
+		},
+		apps: map[string]*store.App{"a1": {ID: "a1", Tools: cmds}},
+	}
+	matched, _, _, err := newMatchDispatcher(store).MatchCommand("b1", "cmd now")
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if len(matched) != 0 {
+		t.Error("disabled installation must not match a bare command")
+	}
+}
+
+func TestMatchCommand_BareFormInstallationTools(t *testing.T) {
+	// Marketplace/builtin apps (e.g. Runner) keep their commands per
+	// installation instead of on the shared app record.
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "hn", Command: "hn"}})
+	store := &mockAppStore{
+		installations: []store.AppInstallation{
+			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, Tools: cmds},
+		},
+		apps: map[string]*store.App{"a1": {ID: "a1", Tools: jsonx.RawMessage(`[]`)}},
+	}
+	matched, cmd, args, err := newMatchDispatcher(store).MatchCommand("b1", "HN top 10")
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if cmd != "hn" || args != "top 10" || len(matched) != 1 {
+		t.Errorf("MatchCommand = (%v, %q, %q), want 1 installation, hn, %q", matched, cmd, args, "top 10")
+	}
+}
+
+func TestInstallationSupportsCommand(t *testing.T) {
+	appTools, _ := jsonx.Marshal([]store.AppTool{{Name: "run", Command: "deploy"}})
+	instTools, _ := jsonx.Marshal([]store.AppTool{{Name: "hn", Command: "hn"}})
+	mock := &mockAppStore{
+		installations: []store.AppInstallation{
+			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, Tools: instTools},
+		},
+		apps: map[string]*store.App{"a1": {ID: "a1", Tools: appTools}},
+	}
+	d := newMatchDispatcher(mock)
+	inst := &store.AppInstallation{ID: "i1", AppID: "a1", Enabled: true, Tools: instTools}
+
+	tests := []struct {
+		name string
+		inst *store.AppInstallation
+		cmd  string
+		want bool
+	}{
+		{"installation trigger", inst, "hn", true},
+		{"installation trigger case insensitive", inst, "HN", true},
+		{"app-level trigger", inst, "deploy", true},
+		{"app-level trigger case insensitive", inst, "Deploy", true},
+		{"unknown trigger", inst, "unknown", false},
+		{"empty name", inst, "", false},
+		{"nil installation", nil, "hn", false},
+		{"installation without tools still sees app tools", &store.AppInstallation{ID: "i1", AppID: "a1"}, "deploy", true},
+		{"missing app", &store.AppInstallation{ID: "i2", AppID: "missing"}, "hn", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := d.InstallationSupportsCommand(tt.inst, tt.cmd); got != tt.want {
+				t.Errorf("InstallationSupportsCommand(%q) = %v, want %v", tt.cmd, got, tt.want)
+			}
+		})
 	}
 }
 
@@ -314,8 +452,8 @@ func TestMatchCommand_ListError(t *testing.T) {
 // --- MatchEvent tests ---
 
 func TestMatchEvent_Success(t *testing.T) {
-	events, _ := json.Marshal([]string{"message"})
-	scopes, _ := json.Marshal([]string{"message:read"})
+	events, _ := jsonx.Marshal([]string{"message"})
+	scopes, _ := jsonx.Marshal([]string{"message:read"})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, AppWebhookURL: "http://example.com", Scopes: scopes},
@@ -336,8 +474,8 @@ func TestMatchEvent_Success(t *testing.T) {
 }
 
 func TestMatchEvent_NoSubscription(t *testing.T) {
-	events, _ := json.Marshal([]string{"reaction.added"})
-	scopes, _ := json.Marshal([]string{"message:read"})
+	events, _ := jsonx.Marshal([]string{"reaction.added"})
+	scopes, _ := jsonx.Marshal([]string{"message:read"})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, AppWebhookURL: "http://example.com", Scopes: scopes},
@@ -358,8 +496,8 @@ func TestMatchEvent_NoSubscription(t *testing.T) {
 }
 
 func TestMatchEvent_DisabledExcluded(t *testing.T) {
-	events, _ := json.Marshal([]string{"message"})
-	scopes, _ := json.Marshal([]string{"message:read"})
+	events, _ := jsonx.Marshal([]string{"message"})
+	scopes, _ := jsonx.Marshal([]string{"message:read"})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: false, AppWebhookURL: "http://example.com", Scopes: scopes},
@@ -538,10 +676,10 @@ func TestMatchHandle_NoRequestURL(t *testing.T) {
 }
 
 func TestMatchEvent_MultipleInstallations(t *testing.T) {
-	events1, _ := json.Marshal([]string{"message"})
-	scopes1, _ := json.Marshal([]string{"message:read"})
-	events2, _ := json.Marshal([]string{"reaction"})
-	scopes2, _ := json.Marshal([]string{"message:read"})
+	events1, _ := jsonx.Marshal([]string{"message"})
+	scopes1, _ := jsonx.Marshal([]string{"message:read"})
+	events2, _ := jsonx.Marshal([]string{"reaction"})
+	scopes2, _ := jsonx.Marshal([]string{"message:read"})
 	store := &mockAppStore{
 		installations: []store.AppInstallation{
 			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true, AppWebhookURL: "http://a.com", Scopes: scopes1},
@@ -566,12 +704,32 @@ func TestMatchEvent_MultipleInstallations(t *testing.T) {
 // TestChannelTaggedReplyIsInert guards issue #248 Part 2: the channel-reply
 // prefix uses 【handle】 rather than @handle precisely so that if such a reply
 // ever echoes back as inbound it is NOT re-parsed as a mention or command
-// (which would risk a routing loop).
+// (which would risk a routing loop). With "/" now optional for bare messages,
+// the guard is asserted where it matters: routing never resolves a tagged reply
+// to a command, neither slash-prefixed nor bare.
 func TestChannelTaggedReplyIsInert(t *testing.T) {
 	if h, c, txt := ParseMention("【openclaw】 hello"); h != "" || c != "" || txt != "" {
 		t.Errorf("ParseMention(【openclaw】...) = (%q, %q, %q), want all empty", h, c, txt)
 	}
-	if cmd, _ := parseCommand("【openclaw】 /deploy prod"); cmd != "" {
-		t.Errorf("parseCommand(【openclaw】 /deploy) cmd = %q, want empty", cmd)
+
+	cmds, _ := jsonx.Marshal([]store.AppTool{{Name: "run_deploy", Command: "deploy"}})
+	store := &mockAppStore{
+		installations: []store.AppInstallation{
+			{ID: "i1", AppID: "a1", BotID: "b1", Enabled: true},
+		},
+		apps: map[string]*store.App{"a1": {ID: "a1", Tools: cmds}},
+	}
+	d := newMatchDispatcher(store)
+	for _, content := range []string{"【openclaw】 /deploy prod", "【openclaw】 deploy prod", "【openclaw】 deploy", "【openclaw】"} {
+		matched, cmd, _, err := d.MatchCommand("b1", content)
+		if err != nil {
+			t.Fatalf("MatchCommand(%q) error: %v", content, err)
+		}
+		if len(matched) != 0 {
+			t.Errorf("MatchCommand(%q) matched %d installations, want 0 (tagged replies must stay inert)", content, len(matched))
+		}
+		if cmd == "deploy" {
+			t.Errorf("MatchCommand(%q) cmd = %q, want not the registered trigger", content, cmd)
+		}
 	}
 }

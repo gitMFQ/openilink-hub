@@ -1,19 +1,19 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 )
 
 type WSHub struct {
 	mu       sync.RWMutex
-	conns    map[string]*WSConn   // installation_id → conn
-	appConns map[string]*WSConn   // app_id → conn (app-level WS)
+	conns    map[string]*WSConn // installation_id → conn
+	appConns map[string]*WSConn // app_id → conn (app-level WS)
 }
 
 type WSConn struct {
@@ -83,7 +83,7 @@ func (h *WSHub) UnregisterAppLevel(appID string, conn *WSConn) {
 
 // SendJSON marshals v as JSON and enqueues it on the connection's send buffer.
 func (c *WSConn) SendJSON(v any) error {
-	data, err := json.Marshal(v)
+	data, err := jsonx.Marshal(v)
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func (c *WSConn) ReadPump(h ReadPumpHandler) {
 		}
 
 		var msg map[string]any
-		if err := json.Unmarshal(message, &msg); err != nil {
+		if err := jsonx.Unmarshal(message, &msg); err != nil {
 			slog.Warn("ws unmarshal failed", "inst", c.InstID, "app", c.AppSlug, "err", err)
 			continue
 		}

@@ -228,7 +228,7 @@ Hub 的核心扩展机制。每个 App 是一个独立服务，通过标准协�
 App 通过以下方式与 Hub 交互：
 
 - **接收事件**：WebSocket 连接或 Webhook 回调
-- **定义命令**：声明 tools 和 commands，用户通过 `/命令` 或 `@提及` 触发
+- **定义命令**：声明 tools 和 commands，用户通过 `命令`、`/命令` 或 `@提及 命令` 触发（`/` 前缀可选，裸命令需与已注册 trigger 精确匹配）
 - **发送回复**：调用 Hub API 发消息
 
 参考 [openilink-app-echo](https://github.com/openilink/openilink-app-echo) 快速上手。

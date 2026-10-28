@@ -2,7 +2,6 @@ package app
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/store"
 )
 
@@ -47,7 +47,7 @@ func (m *mockInstallDB) SetAppWebhookVerified(id string, verified bool) error {
 type installCallback struct {
 	InstallationID string `json:"installation_id"`
 	AppToken       string `json:"app_token"`
-	SigningSecret   string `json:"signing_secret"`
+	SigningSecret  string `json:"signing_secret"`
 	BotID          string `json:"bot_id"`
 	Handle         string `json:"handle"`
 }
@@ -85,18 +85,18 @@ func (m *mockInstallAppServer) handler(w http.ResponseWriter, r *http.Request) {
 		Type      string `json:"type"`
 		Challenge string `json:"challenge"`
 	}
-	if json.Unmarshal(body, &probe) == nil && probe.Type == "url_verification" {
+	if jsonx.Unmarshal(body, &probe) == nil && probe.Type == "url_verification" {
 		m.mu.Lock()
 		m.challenges = append(m.challenges, probe.Challenge)
 		m.mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"challenge": probe.Challenge})
+		jsonx.NewEncoder(w).Encode(map[string]string{"challenge": probe.Challenge})
 		return
 	}
 
 	// Otherwise, it's an install callback
 	var cb installCallback
-	if err := json.Unmarshal(body, &cb); err == nil {
+	if err := jsonx.Unmarshal(body, &cb); err == nil {
 		m.mu.Lock()
 		m.receivedInstall = &cb
 		m.mu.Unlock()
@@ -115,7 +115,7 @@ func (m *mockInstallAppServer) handler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(m.returnBody))
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"request_url": m.returnURL})
+	jsonx.NewEncoder(w).Encode(map[string]string{"request_url": m.returnURL})
 }
 
 func (m *mockInstallAppServer) close() {
@@ -147,7 +147,7 @@ func simulateNotifyAppInstalled(
 	inst *store.AppInstallation,
 	db *mockInstallDB,
 ) (requestURL string, err error) {
-	payload, _ := json.Marshal(map[string]string{
+	payload, _ := jsonx.Marshal(map[string]string{
 		"installation_id": inst.ID,
 		"app_token":       inst.AppToken,
 		"signing_secret":  signingSecret,
@@ -168,7 +168,7 @@ func simulateNotifyAppInstalled(
 	var result struct {
 		RequestURL string `json:"request_url"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil || result.RequestURL == "" {
+	if err := jsonx.NewDecoder(resp.Body).Decode(&result); err != nil || result.RequestURL == "" {
 		return "", nil
 	}
 
@@ -184,7 +184,7 @@ func simulateAutoVerifyURL(
 ) bool {
 	challenge := "test-verify-challenge-abc123"
 
-	payload, _ := json.Marshal(map[string]any{
+	payload, _ := jsonx.Marshal(map[string]any{
 		"v":         1,
 		"type":      "url_verification",
 		"challenge": challenge,
@@ -199,7 +199,7 @@ func simulateAutoVerifyURL(
 	var result struct {
 		Challenge string `json:"challenge"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := jsonx.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return false
 	}
 	if result.Challenge == challenge {
@@ -219,12 +219,12 @@ func TestInstallFlow_FullNotifyAndVerify(t *testing.T) {
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	inst := &store.AppInstallation{
-		ID:            "inst-001",
-		AppID:         "app-001",
-		BotID:         "bot-001",
-		AppToken:      "tok_abc123",
+		ID:               "inst-001",
+		AppID:            "app-001",
+		BotID:            "bot-001",
+		AppToken:         "tok_abc123",
 		AppWebhookSecret: "sec_xyz789",
-		Handle:        "echo-work",
+		Handle:           "echo-work",
 	}
 
 	// Step 1: Notify the App
@@ -289,12 +289,12 @@ func TestInstallFlow_NotifyAppReturns500(t *testing.T) {
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	inst := &store.AppInstallation{
-		ID:            "inst-002",
-		AppID:         "app-002",
-		BotID:         "bot-002",
-		AppToken:      "tok_fail",
+		ID:               "inst-002",
+		AppID:            "app-002",
+		BotID:            "bot-002",
+		AppToken:         "tok_fail",
 		AppWebhookSecret: "sec_fail",
-		Handle:        "failbot",
+		Handle:           "failbot",
 	}
 
 	requestURL, err := simulateNotifyAppInstalled(client, mock.server.URL+"/callback", inst.AppID, "sec_fail", inst, db)
@@ -321,12 +321,12 @@ func TestInstallFlow_NotifyAppReturnsNoRequestURL(t *testing.T) {
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	inst := &store.AppInstallation{
-		ID:            "inst-003",
-		AppID:         "app-003",
-		BotID:         "bot-003",
-		AppToken:      "tok_nurl",
+		ID:               "inst-003",
+		AppID:            "app-003",
+		BotID:            "bot-003",
+		AppToken:         "tok_nurl",
 		AppWebhookSecret: "sec_nurl",
-		Handle:        "no-url-bot",
+		Handle:           "no-url-bot",
 	}
 
 	requestURL, err := simulateNotifyAppInstalled(client, mock.server.URL+"/callback", inst.AppID, "sec_nurl", inst, db)
@@ -347,7 +347,7 @@ func TestInstallFlow_AutoVerifyWrongChallenge(t *testing.T) {
 	// Create a server that returns a wrong challenge
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"challenge": "wrong-challenge-value"})
+		jsonx.NewEncoder(w).Encode(map[string]string{"challenge": "wrong-challenge-value"})
 	}))
 	defer srv.Close()
 
@@ -412,12 +412,12 @@ func TestInstallFlow_EndToEnd_DynamicURL(t *testing.T) {
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	inst := &store.AppInstallation{
-		ID:            "inst-e2e",
-		AppID:         "app-e2e",
-		BotID:         "bot-e2e",
-		AppToken:      "tok_e2e",
+		ID:               "inst-e2e",
+		AppID:            "app-e2e",
+		BotID:            "bot-e2e",
+		AppToken:         "tok_e2e",
 		AppWebhookSecret: "sec_e2e",
-		Handle:        "my-app",
+		Handle:           "my-app",
 	}
 
 	// Step 1: Notify

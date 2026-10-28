@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -16,6 +15,7 @@ import (
 
 	appdelivery "github.com/openilink/openilink-hub/internal/app"
 	"github.com/openilink/openilink-hub/internal/builtin"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/provider"
 	"github.com/openilink/openilink-hub/internal/relay"
 	"github.com/openilink/openilink-hub/internal/store"
@@ -71,7 +71,9 @@ func (m *Manager) deliverToApps(inst *Instance, msg provider.InboundMessage, p p
 	}
 }
 
-// tryDeliverMention checks if the message starts with @handle and routes to that installation.
+// tryDeliverMention checks if the message starts with @handle and routes to that
+// installation. A trailing "/cmd" is always a command; a bare "cmd" is a command
+// only when the installation registers that trigger.
 func (m *Manager) tryDeliverMention(inst *Instance, msg provider.InboundMessage, p parsedMessage, content string, tracer *store.Tracer, rootSpan *store.SpanBuilder) bool {
 	trimmed := strings.TrimSpace(content)
 	if !strings.HasPrefix(trimmed, "@") {
@@ -97,6 +99,22 @@ func (m *Manager) tryDeliverMention(inst *Instance, msg provider.InboundMessage,
 		command := strings.ToLower(cmd)
 		event := appdelivery.NewEvent("command", map[string]any{
 			"command": command, "text": cmdArgs,
+			"sender": map[string]any{"id": msg.Sender, "role": "user"},
+			"group":  groupInfo(msg), "handle": handle,
+		})
+		event.TraceID = tracer.TraceID()
+		m.deliverEventToApp(inst, installation, event, msg.Sender, tracer, rootSpan)
+		return true
+	}
+
+	// Bare form: "@handle cmd args" is a command too when this installation
+	// actually registers "cmd" as a command trigger. Unregistered text keeps
+	// the legacy message.text behavior, so ordinary chat after an @mention is
+	// never mistaken for a command.
+	if cmd, cmdArgs := appdelivery.SplitFirstField(text); cmd != "" &&
+		m.appDisp.InstallationSupportsCommand(installation, cmd) {
+		event := appdelivery.NewEvent("command", map[string]any{
+			"command": strings.ToLower(cmd), "text": cmdArgs,
 			"sender": map[string]any{"id": msg.Sender, "role": "user"},
 			"group":  groupInfo(msg), "handle": handle,
 		})
@@ -147,7 +165,7 @@ func (m *Manager) deliverEventToApp(inst *Instance, installation *store.AppInsta
 				slog.Warn("ws delivery failed", "inst", installation.ID, "app", installation.AppSlug, "err", err)
 				span.EndWithError("ws send: " + err.Error())
 			} else {
-				envJSON, _ := json.Marshal(envelope)
+				envJSON, _ := jsonx.Marshal(envelope)
 				m.appDisp.Store.CreateEventLog(&store.AppEventLog{
 					InstallationID: installation.ID,
 					TraceID:        event.TraceID,
@@ -200,7 +218,10 @@ func (m *Manager) deliverEventToApp(inst *Instance, installation *store.AppInsta
 	}
 }
 
-// tryDeliverCommand checks if the message is a /command and delivers it.
+// tryDeliverCommand checks if the message is a command and delivers it. The "/"
+// prefix is optional for bare messages, but a bare first word only counts when
+// an enabled installation registers it as a command trigger — otherwise the
+// caller falls through to the unchanged message.* flow.
 func (m *Manager) tryDeliverCommand(inst *Instance, msg provider.InboundMessage, p parsedMessage, content string, tracer *store.Tracer, rootSpan *store.SpanBuilder) bool {
 	installations, command, args, err := m.appDisp.MatchCommand(inst.DBID, content)
 	if err != nil {
@@ -302,7 +323,7 @@ func (m *Manager) sendAppText(ctx context.Context, inst *Instance, to, contextTo
 	}
 	slog.Info("app reply sent", "bot", inst.DBID, "to", to, "client_id", clientID)
 
-	itemList, _ := json.Marshal([]map[string]any{{"type": "text", "text": text}})
+	itemList, _ := jsonx.Marshal([]map[string]any{{"type": "text", "text": text}})
 	m.store.SaveMessage(&store.Message{
 		BotID: inst.DBID, Direction: "outbound", ToUserID: to, MessageType: 2, ItemList: itemList,
 	})
@@ -395,7 +416,7 @@ func (m *Manager) sendAppMedia(ctx context.Context, inst *Instance, to, contextT
 	slog.Info("app media sent", "bot", inst.DBID, "to", to, "type", result.ReplyType, "size", len(data), "client_id", clientID)
 
 	mediaStatus := ""
-	mediaKeys := json.RawMessage(`{}`)
+	mediaKeys := jsonx.RawMessage(`{}`)
 	storageKey := ""
 	if len(data) > 0 && m.storage != nil {
 		ct := detectOutboundContentType(result.ReplyType)
@@ -407,7 +428,7 @@ func (m *Manager) sendAppMedia(ctx context.Context, inst *Instance, to, contextT
 			now.Format("2006/01/02"), now.UnixMilli(), rnd, ext)
 		if _, err := m.storage.Put(ctx, key, ct, data); err == nil {
 			mediaStatus = "ready"
-			mediaKeys, _ = json.Marshal(map[string]string{"0": key})
+			mediaKeys, _ = jsonx.Marshal(map[string]string{"0": key})
 			storageKey = key
 		} else {
 			slog.Warn("app media: objectstore put failed", "key", key, "err", err)
@@ -415,7 +436,7 @@ func (m *Manager) sendAppMedia(ctx context.Context, inst *Instance, to, contextT
 	}
 
 	itemType := result.ReplyType
-	itemList, _ := json.Marshal([]map[string]any{{"type": itemType, "file_name": fileName}})
+	itemList, _ := jsonx.Marshal([]map[string]any{{"type": itemType, "file_name": fileName}})
 	m.store.SaveMessage(&store.Message{
 		BotID: inst.DBID, Direction: "outbound", ToUserID: to, MessageType: 2, ItemList: itemList,
 		MediaStatus: mediaStatus, MediaKeys: mediaKeys,
@@ -542,4 +563,3 @@ func resolveItemMedia(item *relay.MessageItem, baseURL, botDBID string) {
 	m.AESKey = ""
 	item.Media = &m
 }
-

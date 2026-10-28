@@ -33,7 +33,7 @@ In the OpeniLink Hub dashboard -> Apps -> Create App:
 #### Tools
 
 Tools define your App's capabilities. Each tool is a function that can be:
-- Triggered by users via slash commands (e.g. `/pr`)
+- Triggered by users via commands (e.g. `/pr`, or `pr` — the `/` prefix is optional)
 - Called by the platform's AI Agent via structured tool calling
 
 | Field | Required | Description |
@@ -70,17 +70,22 @@ Example -- a GitHub App with tools:
 
 ##### How tools are triggered
 
-**By user (slash command):** User sends `/pr openilink/openilink-hub` -> platform delivers:
+**By user (command):** User sends `/pr openilink/openilink-hub`, or the same
+text without the `/` prefix -> platform delivers:
 ```json
 {"command": "pr", "text": "openilink/openilink-hub", "args": null}
 ```
+The `/` prefix is optional. Without it the first word must exactly match a
+`command` trigger registered by an enabled installation on that Bot; anything
+else is delivered as a normal `message.*` event, so ordinary chat is never
+mistaken for a command.
 
 **By AI Agent (tool calling):** AI decides to call `list_prs` -> platform delivers:
 ```json
 {"command": "pr", "text": "", "args": {"repo": "openilink/openilink-hub", "state": "open"}}
 ```
 
-**Via @handle:** User sends `@github /pr args` or `@github list my PRs` (AI Agent interprets).
+**Via @handle:** User sends `@github /pr args`, `@github pr args` (slash optional when the installation registers `pr`), or `@github list my PRs` (AI Agent interprets).
 
 Tools without a `command` field are only callable by the AI Agent.
 

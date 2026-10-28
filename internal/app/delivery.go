@@ -6,7 +6,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/openilink/openilink-hub/internal/jsonx"
 	"github.com/openilink/openilink-hub/internal/store"
 )
 
@@ -54,12 +54,12 @@ type DeliveryResult struct {
 
 // eventEnvelope is the JSON structure POSTed to the app's webhook_url.
 type eventEnvelope struct {
-	V              int            `json:"v"`
-	Type           string         `json:"type"`
-	TraceID        string         `json:"trace_id"`
-	InstallationID string         `json:"installation_id"`
-	Bot            envelopBot     `json:"bot"`
-	Event          *Event         `json:"event"`
+	V              int        `json:"v"`
+	Type           string     `json:"type"`
+	TraceID        string     `json:"trace_id"`
+	InstallationID string     `json:"installation_id"`
+	Bot            envelopBot `json:"bot"`
+	Event          *Event     `json:"event"`
 }
 
 type envelopBot struct {
@@ -147,7 +147,7 @@ func (d *Dispatcher) DeliverEvent(inst *store.AppInstallation, event *Event) (*D
 		Event:          event,
 	}
 
-	body, err := json.Marshal(envelope)
+	body, err := jsonx.Marshal(envelope)
 	if err != nil {
 		return nil, fmt.Errorf("marshal envelope: %w", err)
 	}
@@ -205,7 +205,7 @@ func (d *Dispatcher) DeliverEvent(inst *store.AppInstallation, event *Event) (*D
 	// Parse optional sync reply.
 	if len(respBody) > 0 {
 		var sr syncReply
-		if json.Unmarshal(respBody, &sr) == nil {
+		if jsonx.Unmarshal(respBody, &sr) == nil {
 			if sr.ReplyAsync {
 				result.ReplyAsync = true
 			} else if sr.Reply != "" || sr.ReplyURL != "" || sr.ReplyBase64 != "" {
