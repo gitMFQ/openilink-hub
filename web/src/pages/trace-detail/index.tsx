@@ -6,13 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import {
-  TraceSpan,
-  kindColors,
-  durationMs,
-  formatDuration,
-  StatusIcon,
-} from "@/lib/trace-utils";
+import { TraceSpan, kindColors, durationMs, formatDuration, StatusIcon } from "@/lib/trace-utils";
 import { TimelineView } from "./timeline-view";
 import { FlowView } from "./flow-view";
 import { SpanDetail } from "./span-detail";
@@ -48,7 +42,7 @@ export function TraceDetailPage() {
 
   const rootSpan = useMemo(() => spans.find((s) => !s.parent_span_id), [spans]);
   const selectedSpan = useMemo(
-    () => (selectedSpanId ? spans.find((s) => s.span_id === selectedSpanId) ?? null : null),
+    () => (selectedSpanId ? (spans.find((s) => s.span_id === selectedSpanId) ?? null) : null),
     [spans, selectedSpanId],
   );
   const totalDuration = useMemo(() => {
@@ -61,19 +55,19 @@ export function TraceDetailPage() {
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
             size="sm"
-            className="rounded-full px-4 font-bold text-xs"
+            className="rounded-full px-4 font-bold text-xs max-sm:h-10 max-sm:px-5"
             onClick={() => navigate(`/dashboard/accounts/${botId}/traces`)}
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             返回列表
           </Button>
           {rootSpan && (
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <StatusIcon code={rootSpan.status_code} size="w-4 h-4" />
               <Badge
                 variant="outline"
@@ -81,7 +75,7 @@ export function TraceDetailPage() {
               >
                 {rootSpan.kind}
               </Badge>
-              <span className="text-sm font-mono font-medium">
+              <span className="text-sm font-mono font-medium truncate max-w-[220px] sm:max-w-none">
                 {rootSpan.attributes?.["message.sender"] || rootSpan.name}
               </span>
               <span className="text-xs text-muted-foreground font-mono">
@@ -95,14 +89,20 @@ export function TraceDetailPage() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 max-sm:flex-wrap">
           <span className="text-[10px] font-mono text-muted-foreground hidden md:block">
             {traceId}
           </span>
           <Badge variant="secondary" className="text-[10px] h-5 font-mono">
             {spans.length} spans
           </Badge>
-          <Button variant="outline" size="sm" onClick={load} disabled={loading} className="h-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={load}
+            disabled={loading}
+            className="h-8 max-sm:h-10"
+          >
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
             刷新
           </Button>
@@ -121,7 +121,7 @@ export function TraceDetailPage() {
           <p className="text-sm italic">未找到追踪数据</p>
         </div>
       ) : (
-        <Tabs defaultValue="timeline" className="w-full">
+        <Tabs defaultValue="timeline" className="w-full min-w-0">
           <TabsList>
             <TabsTrigger value="timeline" className="text-xs">
               Timeline
@@ -131,8 +131,8 @@ export function TraceDetailPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="timeline">
-            <div className="rounded-xl border bg-card/50 p-4 shadow-sm overflow-x-auto">
+          <TabsContent value="timeline" className="min-w-0">
+            <div className="rounded-xl border bg-card/50 p-3 shadow-sm overflow-x-auto sm:p-4">
               <TimelineView
                 spans={spans}
                 selectedSpanId={selectedSpanId}
@@ -141,7 +141,7 @@ export function TraceDetailPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="flow">
+          <TabsContent value="flow" className="min-w-0">
             <FlowView
               spans={spans}
               selectedSpanId={selectedSpanId}

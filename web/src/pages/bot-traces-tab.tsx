@@ -24,26 +24,32 @@ export function BotTracesTab({ botId }: { botId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold">消息日志</h3>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={loading} className="h-8">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={loading}
+          className="h-8 max-sm:h-10"
+        >
           <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} /> 刷新
         </Button>
       </div>
 
       <div className="rounded-xl border bg-card/50 overflow-hidden shadow-sm">
-        <Table>
+        <Table className="min-w-[560px]">
           <TableHeader className="bg-muted/30">
             <TableRow>
-              <TableHead className="w-[100px]">状态</TableHead>
-              <TableHead>发送者</TableHead>
-              <TableHead className="hidden md:table-cell">核心事件</TableHead>
-              <TableHead className="text-right">Tokens</TableHead>
-              <TableHead className="text-right">耗时</TableHead>
-              <TableHead className="text-right">时间</TableHead>
+              <TableHead className="w-[100px] whitespace-nowrap">状态</TableHead>
+              <TableHead className="whitespace-nowrap">发送者</TableHead>
+              <TableHead className="hidden md:table-cell whitespace-nowrap">核心事件</TableHead>
+              <TableHead className="text-right whitespace-nowrap">Tokens</TableHead>
+              <TableHead className="text-right whitespace-nowrap">耗时</TableHead>
+              <TableHead className="text-right whitespace-nowrap">时间</TableHead>
               <TableHead className="w-8" />
             </TableRow>
           </TableHeader>
@@ -51,13 +57,27 @@ export function BotTracesTab({ botId }: { botId: string }) {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-10 ml-auto" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-10 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-4" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : rootSpans.length === 0 ? (
@@ -78,12 +98,20 @@ export function BotTracesTab({ botId }: { botId: string }) {
                     className="cursor-pointer focus-visible:bg-muted/50"
                     tabIndex={0}
                     onClick={() => navigate(`/dashboard/accounts/${botId}/traces/${root.trace_id}`)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/dashboard/accounts/${botId}/traces/${root.trace_id}`); } }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/dashboard/accounts/${botId}/traces/${root.trace_id}`);
+                      }
+                    }}
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <StatusIcon code={root.status_code} size="w-3.5 h-3.5" />
-                        <Badge variant="secondary" className="text-[9px] h-4 leading-none uppercase">
+                        <Badge
+                          variant="secondary"
+                          className="text-[9px] h-4 leading-none uppercase"
+                        >
                           {root.attributes?.["message.type"] || "执行"}
                         </Badge>
                       </div>
@@ -91,10 +119,19 @@ export function BotTracesTab({ botId }: { botId: string }) {
                     <TableCell className="font-mono text-xs max-w-[120px] truncate">
                       {sender}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground truncate max-w-[200px]" title={root.status_code === "error" && root.status_message ? root.status_message : undefined}>
+                    <TableCell
+                      className="text-xs text-muted-foreground truncate max-w-[200px]"
+                      title={
+                        root.status_code === "error" && root.status_message
+                          ? root.status_message
+                          : undefined
+                      }
+                    >
                       {root.status_code === "error" && root.status_message ? (
                         <span className="text-destructive">{root.status_message}</span>
-                      ) : content}
+                      ) : (
+                        content
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-mono text-[10px] text-muted-foreground">
                       {root.attributes?.["ai.tokens.total"] || "\u2014"}
@@ -103,7 +140,11 @@ export function BotTracesTab({ botId }: { botId: string }) {
                       {dur > 0 ? `${dur}ms` : "<1ms"}
                     </TableCell>
                     <TableCell className="text-right text-[10px] text-muted-foreground">
-                      {new Date(root.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      {new Date(root.start_time).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
                     </TableCell>
                     <TableCell className="w-8 px-2">
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />

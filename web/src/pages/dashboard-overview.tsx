@@ -59,8 +59,8 @@ export function DashboardOverviewPage() {
   if (loading)
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-5 w-48" />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Skeleton className="h-5 w-40 sm:w-48" />
           <div className="flex gap-2">
             <Skeleton className="h-9 w-24" />
             <Skeleton className="h-9 w-24" />
@@ -81,16 +81,25 @@ export function DashboardOverviewPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">概览</h1>
           <p className="text-sm text-muted-foreground mt-0.5">查看账号状态和消息统计。</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" className="h-9 px-4 font-medium" asChild>
+        <div className="flex items-center gap-2 shrink-0 max-sm:flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 px-4 font-medium max-sm:h-11 max-sm:flex-1"
+            asChild
+          >
             <Link to="/dashboard/accounts">账号管理</Link>
           </Button>
-          <Button size="sm" className="h-9 px-4 gap-1.5 font-medium shadow-sm" asChild>
+          <Button
+            size="sm"
+            className="h-9 px-4 gap-1.5 font-medium shadow-sm max-sm:h-11 max-sm:flex-1"
+            asChild
+          >
             <Link to="/dashboard/accounts">
               <Plus className="h-3.5 w-3.5" /> 添加账号
             </Link>
@@ -199,7 +208,7 @@ export function DashboardOverviewPage() {
       </div>
 
       {(stats?.online_bots ?? 0) === 0 ? (
-        <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/20 bg-destructive/5">
+        <div className="flex items-center gap-3 p-3 rounded-lg border border-destructive/20 bg-destructive/5 sm:p-4 max-sm:flex-wrap">
           <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-destructive">暂无在线账号</p>
@@ -207,7 +216,12 @@ export function DashboardOverviewPage() {
               还没有在线的微信账号，请先添加一个。
             </p>
           </div>
-          <Button size="sm" variant="destructive" className="shrink-0 h-8 px-3 text-xs" asChild>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="shrink-0 h-8 px-3 text-xs max-sm:h-11 max-sm:ml-auto"
+            asChild
+          >
             <Link to="/dashboard/accounts">立即添加</Link>
           </Button>
         </div>
@@ -233,7 +247,7 @@ export function DashboardOverviewPage() {
                 <Link
                   key={i}
                   to={item.link}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-muted/40 transition-colors group"
+                  className="flex items-center gap-3 px-4 py-4 hover:bg-muted/40 transition-colors group sm:gap-4 sm:px-6"
                 >
                   <span className="text-xs font-bold tabular-nums text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors w-5 shrink-0">
                     {item.step}
@@ -268,7 +282,7 @@ export function DashboardOverviewPage() {
                 <Button
                   key={item.link}
                   variant="outline"
-                  className="h-auto flex-col gap-2 py-4 justify-start items-center"
+                  className="h-auto min-w-0 flex-col gap-2 py-4 justify-start items-center"
                   asChild
                 >
                   <Link to={item.link}>

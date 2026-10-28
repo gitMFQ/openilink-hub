@@ -64,7 +64,7 @@ const TABS: { key: TabFilter; label: string }[] = [
 export function AdminReviewsPage() {
   const { data: apps = [], isLoading: loading } = useAdminApps();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = selectedId ? apps.find((a: any) => a.id === selectedId) ?? null : null;
+  const selected = selectedId ? (apps.find((a: any) => a.id === selectedId) ?? null) : null;
   const [rejectTarget, setRejectTarget] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [tab, setTab] = useState<TabFilter>("pending");
@@ -142,7 +142,7 @@ export function AdminReviewsPage() {
       <div
         role="tablist"
         ref={tabListRef}
-        className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground"
+        className="inline-flex h-9 max-w-full items-center overflow-x-auto hide-scrollbar rounded-lg bg-muted p-1 text-muted-foreground max-sm:h-11"
         onKeyDown={(e) => {
           const keys = TABS.map((t) => t.key);
           const idx = keys.indexOf(tab);
@@ -165,20 +165,27 @@ export function AdminReviewsPage() {
             aria-selected={tab === key}
             aria-controls="review-tabpanel"
             tabIndex={tab === key ? 0 : -1}
-            onClick={() => { setTab(key); setSelectedId(null); }}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-all ${
-              tab === key
-                ? "bg-background text-foreground shadow-sm"
-                : "hover:text-foreground/80"
+            onClick={() => {
+              setTab(key);
+              setSelectedId(null);
+            }}
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all max-sm:px-3.5 max-sm:py-2 ${
+              tab === key ? "bg-background text-foreground shadow-sm" : "hover:text-foreground/80"
             }`}
           >
             {label}
             {counts[key] > 0 && (
-              <span className={`text-[10px] min-w-[1.25rem] text-center rounded-full px-1 py-px font-semibold ${
-                tab === key
-                  ? key === "pending" ? "bg-orange-500 text-white" : "bg-muted-foreground/20 text-foreground"
-                  : key === "pending" ? "bg-orange-500/80 text-white" : "bg-muted-foreground/10"
-              }`}>
+              <span
+                className={`text-[10px] min-w-[1.25rem] text-center rounded-full px-1 py-px font-semibold ${
+                  tab === key
+                    ? key === "pending"
+                      ? "bg-orange-500 text-white"
+                      : "bg-muted-foreground/20 text-foreground"
+                    : key === "pending"
+                      ? "bg-orange-500/80 text-white"
+                      : "bg-muted-foreground/10"
+                }`}
+              >
                 {counts[key]}
               </span>
             )}
@@ -187,7 +194,12 @@ export function AdminReviewsPage() {
       </div>
 
       {/* Main content */}
-      <div id="review-tabpanel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="flex flex-col md:flex-row gap-4">
+      <div
+        id="review-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        className="flex flex-col md:flex-row gap-4"
+      >
         {/* Left: App Queue */}
         <div className="md:w-64 shrink-0 space-y-0.5 overflow-y-auto max-h-[50vh] md:max-h-[calc(100vh-14rem)]">
           {loading ? (
@@ -226,7 +238,8 @@ export function AdminReviewsPage() {
                     {tab === "all" && <ListingBadge listing={a.listing} />}
                   </div>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {a.version ? `v${a.version} · ` : ""}{timeAgo(a.updated_at)}
+                    {a.version ? `v${a.version} · ` : ""}
+                    {timeAgo(a.updated_at)}
                   </p>
                 </div>
               </button>
@@ -239,16 +252,20 @@ export function AdminReviewsPage() {
           {selected ? (
             <div className="rounded-xl border border-border/50 bg-card md:sticky md:top-6 md:max-h-[calc(100vh-14rem)] flex flex-col">
               {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 sm:p-5">
                 {/* Header */}
                 <div className="flex items-start gap-3">
                   <AppIcon icon={selected.icon} iconUrl={selected.icon_url} size="h-10 w-10" />
                   <div className="flex-1 min-w-0">
                     <h2 className="text-base font-bold leading-tight">{selected.name}</h2>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs text-muted-foreground font-mono">{selected.slug}</p>
+                      <p className="text-xs text-muted-foreground font-mono truncate">
+                        {selected.slug}
+                      </p>
                       {selected.version && (
-                        <Badge variant="outline" className="text-[10px] font-mono">v{selected.version}</Badge>
+                        <Badge variant="outline" className="text-[10px] font-mono">
+                          v{selected.version}
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -265,38 +282,54 @@ export function AdminReviewsPage() {
 
                 {/* Review Highlights — most important for reviewers */}
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">审核要点</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    审核要点
+                  </p>
 
                   <ReviewField icon={<Shield className="h-3.5 w-3.5" />} label="权限">
                     {selScopes.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {selScopes.map((s: string, i: number) => (
-                          <Badge key={i} variant="outline" className="text-[10px] font-mono">{s}</Badge>
+                          <Badge key={i} variant="outline" className="text-[10px] font-mono">
+                            {s}
+                          </Badge>
                         ))}
                       </div>
-                    ) : <span className="text-xs text-muted-foreground/50">无</span>}
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">无</span>
+                    )}
                   </ReviewField>
 
                   <ReviewField icon={<Terminal className="h-3.5 w-3.5" />} label="工具">
                     {selTools.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {selTools.map((t: any, i: number) => (
-                          <Badge key={i} variant="secondary" className="text-[10px] font-mono gap-1">
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="text-[10px] font-mono gap-1"
+                          >
                             {t.command ? `/${t.command}` : t.name}
                           </Badge>
                         ))}
                       </div>
-                    ) : <span className="text-xs text-muted-foreground/50">无</span>}
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">无</span>
+                    )}
                   </ReviewField>
 
                   <ReviewField icon={<Radio className="h-3.5 w-3.5" />} label="事件">
                     {selEvents.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {selEvents.map((e: string, i: number) => (
-                          <Badge key={i} variant="outline" className="text-[10px] font-mono">{e}</Badge>
+                          <Badge key={i} variant="outline" className="text-[10px] font-mono">
+                            {e}
+                          </Badge>
                         ))}
                       </div>
-                    ) : <span className="text-xs text-muted-foreground/50">无</span>}
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">无</span>
+                    )}
                   </ReviewField>
 
                   <ReviewField icon={<Globe className="h-3.5 w-3.5" />} label="Webhook">
@@ -318,21 +351,33 @@ export function AdminReviewsPage() {
                       </p>
                       <div className="space-y-2">
                         {reviews.map((review: any) => (
-                          <div key={review.id} className="flex items-start gap-2 text-xs">
+                          <div key={review.id} className="flex flex-wrap items-start gap-2 text-xs">
                             <span className="text-muted-foreground whitespace-nowrap mt-0.5 tabular-nums">
                               {new Date(review.created_at * 1000).toLocaleString("zh-CN", {
-                                month: "2-digit", day: "2-digit",
-                                hour: "2-digit", minute: "2-digit",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
                               })}
                             </span>
-                            <Badge variant={ACTION_VARIANTS[review.action] || "outline"} className="text-[10px] shrink-0">
+                            <Badge
+                              variant={ACTION_VARIANTS[review.action] || "outline"}
+                              className="text-[10px] shrink-0"
+                            >
                               {ACTION_LABELS[review.action] || review.action}
                             </Badge>
                             {review.version && (
-                              <span className="text-muted-foreground font-mono">v{review.version}</span>
+                              <span className="text-muted-foreground font-mono">
+                                v{review.version}
+                              </span>
                             )}
                             {review.reason && (
-                              <span className="text-muted-foreground truncate" title={review.reason}>{review.reason}</span>
+                              <span
+                                className="text-muted-foreground truncate min-w-0"
+                                title={review.reason}
+                              >
+                                {review.reason}
+                              </span>
                             )}
                           </div>
                         ))}
@@ -344,7 +389,9 @@ export function AdminReviewsPage() {
                 {/* App Details — key review content */}
                 <Separator />
                 <div className="space-y-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">应用详情</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    应用详情
+                  </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                     <div>
@@ -380,8 +427,10 @@ export function AdminReviewsPage() {
                   {selected.config_schema && (
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Config Schema</p>
-                      <pre className="text-[10px] font-mono bg-muted/40 rounded p-2 max-h-32 overflow-auto whitespace-pre-wrap">
-                        {typeof selected.config_schema === "string" ? selected.config_schema : JSON.stringify(selected.config_schema, null, 2)}
+                      <pre className="text-[10px] font-mono bg-muted/40 rounded p-2 max-h-32 max-w-full overflow-auto whitespace-pre-wrap break-all">
+                        {typeof selected.config_schema === "string"
+                          ? selected.config_schema
+                          : JSON.stringify(selected.config_schema, null, 2)}
                       </pre>
                     </div>
                   )}
@@ -389,7 +438,7 @@ export function AdminReviewsPage() {
                   {selected.readme && (
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">README</p>
-                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono bg-muted/40 rounded-lg p-3 max-h-60 overflow-y-auto">
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words font-mono bg-muted/40 rounded-lg p-3 max-h-60 max-w-full overflow-y-auto overflow-x-auto">
                         {selected.readme}
                       </pre>
                     </div>
@@ -398,11 +447,11 @@ export function AdminReviewsPage() {
               </div>
 
               {/* Sticky action buttons */}
-              <div className="border-t px-5 py-3 shrink-0 bg-card rounded-b-xl">
+              <div className="border-t px-4 py-3 shrink-0 bg-card rounded-b-xl sm:px-5">
                 {selected.listing === "pending" ? (
                   <div className="flex gap-3">
                     <Button
-                      className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                      className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 max-sm:h-11"
                       onClick={() => handleApprove(selected)}
                       disabled={submitting}
                     >
@@ -410,8 +459,11 @@ export function AdminReviewsPage() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="flex-1 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5"
-                      onClick={() => { setRejectTarget(selected); setRejectReason(""); }}
+                      className="flex-1 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5 max-sm:h-11"
+                      onClick={() => {
+                        setRejectTarget(selected);
+                        setRejectReason("");
+                      }}
                       disabled={submitting}
                     >
                       <X className="h-4 w-4" /> 拒绝
@@ -420,7 +472,7 @@ export function AdminReviewsPage() {
                 ) : selected.listing === "listed" ? (
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full max-sm:h-11"
                     onClick={() => handleToggle(selected)}
                     disabled={submitting}
                   >
@@ -429,7 +481,7 @@ export function AdminReviewsPage() {
                 ) : (
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full max-sm:h-11"
                     onClick={() => handleApprove(selected)}
                     disabled={submitting}
                   >
@@ -450,7 +502,12 @@ export function AdminReviewsPage() {
       {/* Reject Dialog */}
       <Dialog
         open={!!rejectTarget}
-        onOpenChange={(o) => { if (!o) { setRejectTarget(null); setRejectReason(""); } }}
+        onOpenChange={(o) => {
+          if (!o) {
+            setRejectTarget(null);
+            setRejectReason("");
+          }
+        }}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -471,11 +528,19 @@ export function AdminReviewsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setRejectTarget(null); setRejectReason(""); }}>
+            <Button
+              variant="outline"
+              className="max-sm:h-11"
+              onClick={() => {
+                setRejectTarget(null);
+                setRejectReason("");
+              }}
+            >
               取消
             </Button>
             <Button
               variant="destructive"
+              className="max-sm:h-11"
               onClick={handleRejectConfirm}
               disabled={!rejectReason.trim() || submitting}
             >
@@ -488,7 +553,15 @@ export function AdminReviewsPage() {
   );
 }
 
-function ReviewField({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+function ReviewField({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-start gap-2 text-sm">
       <span className="mt-0.5 text-muted-foreground shrink-0">{icon}</span>

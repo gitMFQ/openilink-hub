@@ -84,9 +84,14 @@ function SpanNodeComponent({ data }: { data: any }) {
           {span.kind}
         </Badge>
       </div>
-      <div className="text-[11px] font-mono font-medium truncate" title={span.name}>{span.name}</div>
+      <div className="text-[11px] font-mono font-medium truncate" title={span.name}>
+        {span.name}
+      </div>
       {span.status_code === "error" && span.status_message ? (
-        <div className="text-[9px] text-destructive font-mono mt-0.5 truncate" title={span.status_message}>
+        <div
+          className="text-[9px] text-destructive font-mono mt-0.5 truncate"
+          title={span.status_message}
+        >
           {span.status_message}
         </div>
       ) : (
@@ -158,7 +163,7 @@ export function FlowView({ spans, selectedSpanId, onSelectSpan }: FlowViewProps)
   );
 
   return (
-    <div className="h-[500px] rounded-lg border bg-card/30 overflow-hidden">
+    <div className="h-[380px] w-full rounded-lg border bg-card/30 overflow-hidden sm:h-[500px]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -171,7 +176,12 @@ export function FlowView({ spans, selectedSpanId, onSelectSpan }: FlowViewProps)
         minZoom={0.3}
         maxZoom={1.5}
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="!bg-transparent" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={16}
+          size={1}
+          className="!bg-transparent"
+        />
         <Controls className="!bg-card !border-border !shadow-sm" />
       </ReactFlow>
     </div>

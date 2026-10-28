@@ -26,7 +26,15 @@ import { useTheme, type Theme } from "../lib/theme";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "../components/ui/badge";
 import { useUser } from "@/hooks/use-auth";
-import { useOAuthAccounts, useOAuthProviders, usePasskeys, useDeletePasskey, useRenamePasskey, useUnlinkOAuth, useUpdateUsername } from "@/hooks/use-settings";
+import {
+  useOAuthAccounts,
+  useOAuthProviders,
+  usePasskeys,
+  useDeletePasskey,
+  useRenamePasskey,
+  useUnlinkOAuth,
+  useUpdateUsername,
+} from "@/hooks/use-settings";
 
 const THEME_OPTIONS = [
   { value: "light", label: "浅色", icon: Sun },
@@ -83,7 +91,7 @@ export function SettingsPage() {
         <div
           className={`flex items-center gap-3 p-4 rounded-xl border animate-in fade-in ${oauthMsg.includes("失败") ? "border-destructive/20 bg-destructive/5 text-destructive" : "border-primary/20 bg-primary/5 text-primary"}`}
         >
-          <span className="text-sm font-medium flex-1">{oauthMsg}</span>
+          <span className="text-sm font-medium flex-1 min-w-0 break-words">{oauthMsg}</span>
           <Button variant="ghost" size="xs" onClick={() => setOauthMsg("")}>
             关闭
           </Button>
@@ -93,7 +101,7 @@ export function SettingsPage() {
       <Tabs
         value={activeTab}
         onValueChange={(v: string) => navigate(`/dashboard/settings/${v}`)}
-        className="space-y-6"
+        className="w-full min-w-0 space-y-6"
       >
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="profile" className="px-6">
@@ -128,7 +136,9 @@ export function SettingsPage() {
           </Card>
           {oauthProvidersError || oauthAccountsError ? (
             <Card className="border-destructive/20">
-              <CardContent className="p-4 text-sm text-destructive">第三方账号信息加载失败</CardContent>
+              <CardContent className="p-4 text-sm text-destructive">
+                第三方账号信息加载失败
+              </CardContent>
             </Card>
           ) : oauthProviders.length > 0 ? (
             <Card className="border-border/50">
@@ -141,22 +151,21 @@ export function SettingsPage() {
                   const account = oauthAccounts.find((a) => a.provider === providerKey);
                   const linked = !!account;
                   const Icon = providerLabels[provider.name]?.icon || ShieldCheck;
-                  const label = providerLabels[provider.name]?.label || provider.display_name || provider.name;
+                  const label =
+                    providerLabels[provider.name]?.label || provider.display_name || provider.name;
                   return (
                     <div
                       key={provider.name}
-                      className="flex items-center justify-between p-4 rounded-xl border bg-muted/10"
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl border bg-muted/10 sm:p-4"
                     >
                       {" "}
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border shadow-sm">
+                      <div className="flex items-center gap-3 min-w-0 sm:gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background border shadow-sm">
                           <Icon className="h-5 w-5" />
                         </div>
-                        <div>
-                          <p className="text-sm font-bold uppercase">
-                            {label}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold uppercase">{label}</p>
+                          <p className="text-xs text-muted-foreground truncate">
                             {linked ? `已关联：${account.username}` : "未连接"}
                           </p>
                         </div>
@@ -165,7 +174,7 @@ export function SettingsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-destructive"
+                          className="shrink-0 text-destructive max-sm:h-11"
                           onClick={async () => {
                             const ok = await confirm({
                               title: "解绑确认",
@@ -185,8 +194,12 @@ export function SettingsPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          className="shrink-0 max-sm:h-11"
                           onClick={() =>
-                            (window.location.href = provider.type === "oidc" ? `/api/me/oidc/${provider.name}/bind` : `/api/me/linked-accounts/${provider.name}/bind`)
+                            (window.location.href =
+                              provider.type === "oidc"
+                                ? `/api/me/oidc/${provider.name}/bind`
+                                : `/api/me/linked-accounts/${provider.name}/bind`)
                           }
                         >
                           <Link2 className="h-3.5 w-3.5 mr-2" /> 绑定
@@ -203,16 +216,16 @@ export function SettingsPage() {
               <CardTitle>界面外观</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {THEME_OPTIONS.map((item) => (
                   <Button
                     key={item.value}
                     variant="ghost"
                     onClick={() => setTheme(item.value as Theme)}
-                    className={`flex flex-col items-center gap-3 p-4 h-auto rounded-xl border transition-all ${theme === item.value ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "bg-muted/20 border-border/50"}`}
+                    className={`flex flex-col items-center gap-2 p-2 h-auto min-w-0 rounded-xl border transition-all sm:gap-3 sm:p-4 ${theme === item.value ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "bg-muted/20 border-border/50"}`}
                   >
                     <div
-                      className={`h-10 w-10 flex items-center justify-center rounded-full ${theme === item.value ? "bg-primary text-primary-foreground shadow-md" : "bg-background text-muted-foreground border"}`}
+                      className={`h-8 w-8 shrink-0 flex items-center justify-center rounded-full sm:h-10 sm:w-10 ${theme === item.value ? "bg-primary text-primary-foreground shadow-md" : "bg-background text-muted-foreground border"}`}
                     >
                       <item.icon className="h-5 w-5" />
                     </div>
@@ -235,8 +248,13 @@ export function SettingsPage() {
 
 const usernameRegex = /^[a-z0-9][a-z0-9_-]*[a-z0-9]$/;
 const reservedUsernames = new Set([
-  "admin", "administrator", "superadmin",
-  "root", "system", "api", "support",
+  "admin",
+  "administrator",
+  "superadmin",
+  "root",
+  "system",
+  "api",
+  "support",
 ]);
 
 function UsernameEditor({ username }: { username?: string }) {
@@ -276,13 +294,22 @@ function UsernameEditor({ username }: { username?: string }) {
       <div className="flex gap-2">
         <Input
           value={value}
-          onChange={(e) => { setValue(e.target.value.toLowerCase()); setError(""); setSuccess(""); }}
+          onChange={(e) => {
+            setValue(e.target.value.toLowerCase());
+            setError("");
+            setSuccess("");
+          }}
           className="font-mono"
           maxLength={32}
           placeholder="your-username"
         />
         {changed && (
-          <Button size="sm" className="shrink-0" onClick={handleSave} disabled={updateUsername.isPending}>
+          <Button
+            size="sm"
+            className="shrink-0"
+            onClick={handleSave}
+            disabled={updateUsername.isPending}
+          >
             {updateUsername.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "保存"}
           </Button>
         )}
@@ -413,7 +440,10 @@ function ChangePasswordSection({ hasPassword }: { hasPassword?: boolean }) {
 
 const isXiaomiDevice = () => /xiaomi|redmi|miui|hyperos/i.test(navigator.userAgent);
 
-function PasskeyNameEditor({ passkey, onError }: {
+function PasskeyNameEditor({
+  passkey,
+  onError,
+}: {
   passkey: { id: string; name: string };
   onError: (msg: string) => void;
 }) {
@@ -433,10 +463,13 @@ function PasskeyNameEditor({ passkey, onError }: {
       setEditing(false);
       return;
     }
-    renamePasskey.mutate({ id: passkey.id, name: trimmed }, {
-      onSuccess: () => setEditing(false),
-      onError: (e: any) => onError(e.message || "重命名失败"),
-    });
+    renamePasskey.mutate(
+      { id: passkey.id, name: trimmed },
+      {
+        onSuccess: () => setEditing(false),
+        onError: (e: any) => onError(e.message || "重命名失败"),
+      },
+    );
   }
 
   if (editing) {
@@ -448,9 +481,12 @@ function PasskeyNameEditor({ passkey, onError }: {
         onBlur={save}
         onKeyDown={(e) => {
           if (e.key === "Enter") save();
-          if (e.key === "Escape") { setValue(passkey.name || "Passkey"); setEditing(false); }
+          if (e.key === "Escape") {
+            setValue(passkey.name || "Passkey");
+            setEditing(false);
+          }
         }}
-        className="h-6 text-xs font-bold px-1.5 py-0 w-32 bg-muted/30"
+        className="h-6 w-full max-w-32 text-xs font-bold px-1.5 py-0 bg-muted/30 max-sm:h-8"
         maxLength={50}
         autoFocus
       />
@@ -459,7 +495,7 @@ function PasskeyNameEditor({ passkey, onError }: {
 
   return (
     <button
-      className="text-xs font-bold hover:underline decoration-dashed underline-offset-2 cursor-pointer text-left"
+      className="text-xs font-bold hover:underline decoration-dashed underline-offset-2 cursor-pointer text-left max-sm:break-all"
       onClick={() => setEditing(true)}
       title="点击修改名称"
     >
@@ -522,8 +558,8 @@ function PasskeySection() {
   return (
     <Card className="border-border/50">
       {ConfirmDialog}
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div className="space-y-1.5">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-0">
+        <div className="min-w-0 space-y-1.5">
           <CardTitle className="flex items-center gap-2">
             通行密钥{" "}
             <Badge className="bg-primary/10 text-primary border-none text-[9px]">推荐</Badge>
@@ -532,7 +568,13 @@ function PasskeySection() {
             使用生物识别（指纹、Face ID）或安全密钥进行登录，更安全、更快捷。
           </CardDescription>
         </div>
-        <Button size="sm" onClick={handleAdd} disabled={adding || !supportsPasskey} className="h-9" title={supportsPasskey ? undefined : "需要 HTTPS 安全连接才能使用通行密钥"}>
+        <Button
+          size="sm"
+          onClick={handleAdd}
+          disabled={adding || !supportsPasskey}
+          className="h-9 shrink-0 max-sm:h-11 max-sm:w-full"
+          title={supportsPasskey ? undefined : "需要 HTTPS 安全连接才能使用通行密钥"}
+        >
           {adding ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
@@ -567,16 +609,29 @@ function PasskeySection() {
               小米 / 红米设备请先确认以下设置
             </p>
             <ol className="list-decimal ml-4 space-y-1.5 leading-relaxed">
-              <li>打开 <b>设置 &gt; 指纹、面部与密码 &gt; 智能密码管理</b>，<b>关闭</b>"自动填充密码与通行密钥"</li>
-              <li>打开 <b>设置 &gt; 更多设置 &gt; 语言与输入法 &gt; 密码与账号</b>，将"首选服务"设为 <b>Google</b> 或 <b>小米智能密码管理</b></li>
+              <li>
+                打开 <b>设置 &gt; 指纹、面部与密码 &gt; 智能密码管理</b>，<b>关闭</b>
+                "自动填充密码与通行密钥"
+              </li>
+              <li>
+                打开 <b>设置 &gt; 更多设置 &gt; 语言与输入法 &gt; 密码与账号</b>，将"首选服务"设为{" "}
+                <b>Google</b> 或 <b>小米智能密码管理</b>
+              </li>
               <li>确保 Google Play 服务已更新到最新版本</li>
             </ol>
-            <p className="text-[10px] text-muted-foreground">设置完成后，点击下方按钮继续注册。如果注册后无法登录，请检查密码管理器中是否有保存的通行密钥。</p>
-            <div className="flex gap-2 pt-1">
-              <Button size="sm" className="h-7 text-xs" onClick={handleAdd}>
+            <p className="text-[10px] text-muted-foreground">
+              设置完成后，点击下方按钮继续注册。如果注册后无法登录，请检查密码管理器中是否有保存的通行密钥。
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button size="sm" className="h-7 text-xs max-sm:h-10" onClick={handleAdd}>
                 已确认，继续注册
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowXiaomiGuide(false)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs max-sm:h-10"
+                onClick={() => setShowXiaomiGuide(false)}
+              >
                 取消
               </Button>
             </div>
@@ -593,17 +648,14 @@ function PasskeySection() {
             {passkeys.map((pk) => (
               <div
                 key={pk.id}
-                className="flex items-center justify-between p-4 rounded-xl border bg-background group hover:border-primary/50 transition-colors"
+                className="flex items-center justify-between gap-2 p-3 rounded-xl border bg-background group hover:border-primary/50 transition-colors sm:p-4"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 flex items-center justify-center rounded-lg bg-primary/5 text-primary">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg bg-primary/5 text-primary">
                     <Smartphone className="h-5 w-5" />
                   </div>
-                  <div>
-                    <PasskeyNameEditor
-                      passkey={pk}
-                      onError={(msg) => setError(msg)}
-                    />
+                  <div className="min-w-0">
+                    <PasskeyNameEditor passkey={pk} onError={(msg) => setError(msg)} />
                     <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 uppercase font-medium">
                       <Clock className="h-2.5 w-2.5" />{" "}
                       {new Date(pk.created_at * 1000).toLocaleDateString()} 绑定
@@ -613,7 +665,7 @@ function PasskeySection() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-8 w-8 shrink-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity max-sm:size-10 max-sm:opacity-100"
                   onClick={async () => {
                     const ok = await confirm({
                       title: "删除确认",

@@ -46,14 +46,14 @@ export function AdminUsersPage() {
       </div>
 
       <div className="rounded-xl border border-border/50 overflow-hidden">
-        <Table>
+        <Table className="min-w-[560px]">
           <TableHeader className="bg-muted/30">
             <TableRow>
-              <TableHead>用户名</TableHead>
-              <TableHead>角色</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead>注册时间</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+              <TableHead className="whitespace-nowrap">用户名</TableHead>
+              <TableHead className="whitespace-nowrap">角色</TableHead>
+              <TableHead className="whitespace-nowrap">状态</TableHead>
+              <TableHead className="whitespace-nowrap">注册时间</TableHead>
+              <TableHead className="whitespace-nowrap text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,12 +87,17 @@ export function AdminUsersPage() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full max-sm:size-10"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
                           <DropdownMenuItem
+                            className="max-sm:py-2.5"
                             onClick={() =>
                               handleUpdateStatus(
                                 u.id,
@@ -108,7 +113,7 @@ export function AdminUsersPage() {
                             {u.status === "active" ? "禁用账号" : "恢复账号"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                            className="text-destructive focus:bg-destructive/10 focus:text-destructive max-sm:py-2.5"
                             onSelect={async (e) => {
                               e.preventDefault();
                               const ok = await confirm({
@@ -122,7 +127,11 @@ export function AdminUsersPage() {
                                   await deleteUserMutation.mutateAsync(u.id);
                                   toast({ title: "已删除用户" });
                                 } catch (e: any) {
-                                  toast({ variant: "destructive", title: "删除失败", description: e.message });
+                                  toast({
+                                    variant: "destructive",
+                                    title: "删除失败",
+                                    description: e.message,
+                                  });
                                 }
                               }
                             }}

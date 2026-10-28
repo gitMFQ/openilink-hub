@@ -191,7 +191,7 @@ export function InstallationDetailPage() {
           variant="ghost"
           size="sm"
           asChild
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
+          className="gap-1.5 text-muted-foreground hover:text-foreground max-sm:h-11"
         >
           <Link to={`/dashboard/accounts/${botId}`}>
             <ArrowLeft className="h-4 w-4" />
@@ -199,15 +199,17 @@ export function InstallationDetailPage() {
           </Link>
         </Button>
 
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           <AppIcon
             icon={inst.app_icon || app.icon}
             iconUrl={inst.app_icon_url || app.icon_url}
-            size="h-14 w-14"
+            size="h-12 w-12 sm:h-14 sm:w-14"
           />
           <div className="flex-1 min-w-0 space-y-1">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">{inst.app_name || app.name}</h1>
+            <div className="flex items-center gap-3 flex-wrap min-w-0">
+              <h1 className="text-2xl font-bold tracking-tight min-w-0 break-words">
+                {inst.app_name || app.name}
+              </h1>
               <InlineHandleEditor value={handle} onSave={handleSaveHandle} />
               {app.registry && app.registry !== "builtin" ? (
                 <Badge variant="outline" className="rounded-full font-bold">
@@ -243,7 +245,7 @@ export function InstallationDetailPage() {
               </div>
             </div>
             {app.description ? (
-              <p className="text-sm text-muted-foreground">{app.description}</p>
+              <p className="text-sm text-muted-foreground break-words">{app.description}</p>
             ) : null}
           </div>
         </div>
@@ -400,7 +402,7 @@ function InlineHandleEditor({ value, onSave }: { value: string; onSave: (v: stri
 
   if (editing) {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 min-w-0">
         <span className="text-sm text-muted-foreground font-mono">@</span>
         <input
           ref={inputRef}
@@ -408,7 +410,7 @@ function InlineHandleEditor({ value, onSave }: { value: string; onSave: (v: stri
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
-          className="h-6 min-w-[8rem] max-w-[20rem] text-sm font-mono bg-transparent border-b border-primary outline-none px-0"
+          className="h-6 min-w-0 sm:min-w-[8rem] max-w-full sm:max-w-[20rem] text-sm font-mono bg-transparent border-b border-primary outline-none px-0"
           placeholder="handle"
           aria-label="编辑 handle"
           autoFocus
@@ -567,13 +569,14 @@ function TokenSection({ app, inst }: { app: any; inst: any }) {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 p-2 rounded-md border bg-background">
-            <code className="text-xs font-mono flex-1 break-all select-all">
+            <code className="text-xs font-mono flex-1 min-w-0 break-all select-all">
               {showToken ? token : maskedToken}
             </code>
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
+              className="max-sm:size-11"
               onClick={() => setShowToken(!showToken)}
               aria-label={showToken ? "隐藏" : "显示"}
             >
@@ -583,6 +586,7 @@ function TokenSection({ app, inst }: { app: any; inst: any }) {
               type="button"
               variant="ghost"
               size="icon-xs"
+              className="max-sm:size-11"
               onClick={() => handleCopy(token)}
               aria-label="复制"
             >
@@ -636,7 +640,7 @@ function TokenSection({ app, inst }: { app: any; inst: any }) {
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
                 WebSocket 连接
               </summary>
-              <pre className="mt-2 p-3 rounded-md bg-muted/30 border text-xs font-mono overflow-x-auto whitespace-pre-wrap">
+              <pre className="mt-2 p-3 rounded-md bg-muted/30 border text-xs font-mono max-w-full overflow-x-auto break-all whitespace-pre-wrap">
                 {`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/bot/v1/ws?token=${token || "<your_token>"}`}
               </pre>
             </details>
@@ -646,7 +650,7 @@ function TokenSection({ app, inst }: { app: any; inst: any }) {
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
                 HTTP 发消息
               </summary>
-              <pre className="mt-2 p-3 rounded-md bg-muted/30 border text-xs font-mono overflow-x-auto whitespace-pre-wrap">
+              <pre className="mt-2 p-3 rounded-md bg-muted/30 border text-xs font-mono max-w-full overflow-x-auto break-all whitespace-pre-wrap">
                 {`curl -X POST ${hubUrl}/bot/v1/message/send \\\n  -H "Authorization: Bearer ${token || "<your_token>"}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"content":"hello"}'`}
               </pre>
             </details>
@@ -657,8 +661,8 @@ function TokenSection({ app, inst }: { app: any; inst: any }) {
       {!showUsageGuide && app.webhook_url ? (
         <Card>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
-              事件将推送到 <code className="font-mono">{app.webhook_url}</code>
+            <p className="text-xs text-muted-foreground break-words">
+              事件将推送到 <code className="font-mono break-all">{app.webhook_url}</code>
             </p>
           </CardContent>
         </Card>
@@ -730,8 +734,8 @@ function AppConfigForm({ app, inst, onUpdate }: { app: any; inst: any; onUpdate:
               ) : null}
             </div>
           ))}
-          <div className="flex items-center gap-2 pt-2 border-t">
-            <Button size="sm" onClick={handleSave} disabled={saving}>
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+            <Button size="sm" className="max-sm:h-11" onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
               保存配置
             </Button>
@@ -744,7 +748,15 @@ function AppConfigForm({ app, inst, onUpdate }: { app: any; inst: any; onUpdate:
 
 // ==================== Config Section ====================
 
-function ConfigSection({ inst, onUninstall, queryClient }: { inst: any; onUninstall: () => void; queryClient: QueryClient }) {
+function ConfigSection({
+  inst,
+  onUninstall,
+  queryClient,
+}: {
+  inst: any;
+  onUninstall: () => void;
+  queryClient: QueryClient;
+}) {
   const { toast } = useToast();
   const [showUninstallDialog, setShowUninstallDialog] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
@@ -776,7 +788,12 @@ function ConfigSection({ inst, onUninstall, queryClient }: { inst: any; onUninst
           <CardDescription>卸载后将删除此安装实例，Token 将失效，此操作不可撤销。</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" size="sm" onClick={() => setShowUninstallDialog(true)}>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="max-sm:h-11"
+            onClick={() => setShowUninstallDialog(true)}
+          >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
             卸载应用
           </Button>
@@ -791,11 +808,20 @@ function ConfigSection({ inst, onUninstall, queryClient }: { inst: any; onUninst
               卸载后将删除此安装实例，Token 将失效，此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={() => setShowUninstallDialog(false)}>
+          <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:justify-end">
+            <Button
+              variant="ghost"
+              className="max-sm:h-11"
+              onClick={() => setShowUninstallDialog(false)}
+            >
               取消
             </Button>
-            <Button variant="destructive" onClick={handleUninstall} disabled={uninstalling}>
+            <Button
+              variant="destructive"
+              className="max-sm:h-11"
+              onClick={handleUninstall}
+              disabled={uninstalling}
+            >
               {uninstalling && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
               确认卸载
             </Button>
@@ -849,15 +875,15 @@ function EventLogsSection({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold">事件投递日志</h2>
           <p className="text-sm text-muted-foreground mt-1">Hub 推送到此应用的事件记录。</p>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 text-xs gap-1"
+          className="h-7 text-xs gap-1 shrink-0 max-sm:h-11"
           onClick={() => {
             setLoading(true);
             loadLogs();
@@ -869,26 +895,30 @@ function EventLogsSection({
       </div>
 
       {/* Show hint when logs contain 403/4xx errors */}
-      {!loading && logs.some((l) => {
-        const code = l.status_code || l.status;
-        return code >= 400 && code < 500;
-      }) && (
-        <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 p-3 text-xs text-muted-foreground space-y-1">
-          <p className="font-medium text-orange-700 dark:text-orange-400">部分事件投递失败</p>
-          <p>如果应用来自远程市场，4xx 错误通常是远程应用服务器的配置问题。请联系应用开发者确认 Webhook 地址和权限配置是否正确。</p>
-          {homepage ? (
-            <a
-              href={homepage}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-orange-700 hover:underline dark:text-orange-400"
-            >
-              <ExternalLink className="h-3 w-3" />
-              前往应用主页
-            </a>
-          ) : null}
-        </div>
-      )}
+      {!loading &&
+        logs.some((l) => {
+          const code = l.status_code || l.status;
+          return code >= 400 && code < 500;
+        }) && (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 p-3 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-orange-700 dark:text-orange-400">部分事件投递失败</p>
+            <p>
+              如果应用来自远程市场，4xx 错误通常是远程应用服务器的配置问题。请联系应用开发者确认
+              Webhook 地址和权限配置是否正确。
+            </p>
+            {homepage ? (
+              <a
+                href={homepage}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-orange-700 hover:underline dark:text-orange-400"
+              >
+                <ExternalLink className="h-3 w-3" />
+                前往应用主页
+              </a>
+            ) : null}
+          </div>
+        )}
 
       <Card className="overflow-hidden">
         {loading ? (
@@ -900,16 +930,16 @@ function EventLogsSection({
         ) : logs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8 px-4">暂无事件日志</p>
         ) : (
-          <Table>
+          <Table className="min-w-[720px]">
             <TableHeader>
               <TableRow>
-                <TableHead>时间</TableHead>
-                <TableHead>事件类型</TableHead>
-                <TableHead>Trace ID</TableHead>
-                <TableHead>状态码</TableHead>
-                <TableHead>耗时</TableHead>
-                <TableHead>错误</TableHead>
-                <TableHead className="w-8" />
+                <TableHead className="whitespace-nowrap">时间</TableHead>
+                <TableHead className="whitespace-nowrap">事件类型</TableHead>
+                <TableHead className="whitespace-nowrap">Trace ID</TableHead>
+                <TableHead className="whitespace-nowrap">状态码</TableHead>
+                <TableHead className="whitespace-nowrap">耗时</TableHead>
+                <TableHead className="whitespace-nowrap">错误</TableHead>
+                <TableHead className="w-8 whitespace-nowrap" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -994,15 +1024,15 @@ function ApiLogsSection({ appId, instId }: { appId: string; instId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold">API 调用日志</h2>
           <p className="text-sm text-muted-foreground mt-1">此应用通过 Bot API 发起的调用记录。</p>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 text-xs gap-1"
+          className="h-7 text-xs gap-1 shrink-0 max-sm:h-11"
           onClick={() => {
             setLoading(true);
             loadLogs();
@@ -1023,14 +1053,14 @@ function ApiLogsSection({ appId, instId }: { appId: string; instId: string }) {
         ) : logs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8 px-4">暂无 API 日志</p>
         ) : (
-          <Table>
+          <Table className="min-w-[560px]">
             <TableHeader>
               <TableRow>
-                <TableHead>时间</TableHead>
-                <TableHead>方法</TableHead>
-                <TableHead>路径</TableHead>
-                <TableHead>状态码</TableHead>
-                <TableHead>耗时</TableHead>
+                <TableHead className="whitespace-nowrap">时间</TableHead>
+                <TableHead className="whitespace-nowrap">方法</TableHead>
+                <TableHead className="whitespace-nowrap">路径</TableHead>
+                <TableHead className="whitespace-nowrap">状态码</TableHead>
+                <TableHead className="whitespace-nowrap">耗时</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1095,11 +1125,13 @@ function PermissionsSection({ app, inst }: { app: any; inst: any }) {
                 {readScopes.map((scope: string) => (
                   <div
                     key={scope}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    className="flex items-center gap-2 min-w-0 text-sm text-muted-foreground"
                   >
                     <Eye className="h-3.5 w-3.5 shrink-0" />
-                    <span>{SCOPE_DESCRIPTIONS[scope] || scope}</span>
-                    <span className="font-mono text-xs ml-auto text-muted-foreground/60">
+                    <span className="min-w-0 break-words">
+                      {SCOPE_DESCRIPTIONS[scope] || scope}
+                    </span>
+                    <span className="font-mono text-xs ml-auto shrink-0 text-muted-foreground/60">
                       {scope}
                     </span>
                   </div>
@@ -1117,11 +1149,13 @@ function PermissionsSection({ app, inst }: { app: any; inst: any }) {
                 {writeScopes.map((scope: string) => (
                   <div
                     key={scope}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    className="flex items-center gap-2 min-w-0 text-sm text-muted-foreground"
                   >
                     <Zap className="h-3.5 w-3.5 shrink-0" />
-                    <span>{SCOPE_DESCRIPTIONS[scope] || scope}</span>
-                    <span className="font-mono text-xs ml-auto text-muted-foreground/60">
+                    <span className="min-w-0 break-words">
+                      {SCOPE_DESCRIPTIONS[scope] || scope}
+                    </span>
+                    <span className="font-mono text-xs ml-auto shrink-0 text-muted-foreground/60">
                       {scope}
                     </span>
                   </div>
@@ -1139,11 +1173,13 @@ function PermissionsSection({ app, inst }: { app: any; inst: any }) {
                 {otherScopes.map((scope: string) => (
                   <div
                     key={scope}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    className="flex items-center gap-2 min-w-0 text-sm text-muted-foreground"
                   >
                     <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                    <span>{SCOPE_DESCRIPTIONS[scope] || scope}</span>
-                    <span className="font-mono text-xs ml-auto text-muted-foreground/60">
+                    <span className="min-w-0 break-words">
+                      {SCOPE_DESCRIPTIONS[scope] || scope}
+                    </span>
+                    <span className="font-mono text-xs ml-auto shrink-0 text-muted-foreground/60">
                       {scope}
                     </span>
                   </div>

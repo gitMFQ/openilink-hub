@@ -55,33 +55,35 @@ export function MediaLightbox({ type, src, alt, onClose }: MediaLightboxProps) {
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      aria-label={type === "image" ? `查看图片${alt ? ` ${alt}` : ""}` : `播放视频${alt ? ` ${alt}` : ""}`}
+      aria-label={
+        type === "image" ? `查看图片${alt ? ` ${alt}` : ""}` : `播放视频${alt ? ` ${alt}` : ""}`
+      }
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white max-sm:top-[max(1rem,var(--safe-top))] max-sm:right-[max(1rem,var(--safe-right))] max-sm:p-3"
         aria-label="关闭预览"
       >
         <X className="h-6 w-6" />
       </button>
       <div
-        className="max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+        className="max-w-[90vw] max-h-[90dvh] flex items-center justify-center"
         onClick={(e) => e.stopPropagation()}
       >
         {type === "image" ? (
           <img
             src={src}
             alt={alt || ""}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-[90dvh] object-contain rounded-lg shadow-2xl"
           />
         ) : (
           <video
             src={src}
             controls
             autoPlay
-            className="max-w-full max-h-[90vh] rounded-lg shadow-2xl"
+            className="max-w-full max-h-[90dvh] rounded-lg shadow-2xl"
           />
         )}
       </div>

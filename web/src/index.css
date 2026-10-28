@@ -133,6 +133,50 @@
   }
 }
 
+/* 移动端安全区（刘海屏 / 手势条）常量，供 arbitrary value 与内联样式复用 */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* 横向滚动容器隐藏滚动条，移动端更干净 */
+@utility hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* 以下规则刻意放在 layer 之外，以便覆盖 Tailwind utilities 层的字号/触摸行为 */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari 会在聚焦字号 <16px 的输入控件时自动放大页面，窄屏统一提到 16px */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* 触摸设备上横向滚动容器启用惯性滚动并避免带动整页 */
+@media (hover: none) {
+  .overflow-x-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 @keyframes hexagon-drift {
   0% {
     transform: translate3d(-2%, -1%, 0) scale(1.02);

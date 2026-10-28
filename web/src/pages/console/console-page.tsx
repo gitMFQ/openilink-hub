@@ -53,7 +53,6 @@ export function ConsolePage() {
   const dragDepthRef = useRef(0);
   const stagedPreviewRef = useRef<string | null>(null);
 
-
   const fetchData = useCallback(async () => {
     if (!botId) return;
     try {
@@ -74,11 +73,16 @@ export function ConsolePage() {
 
   // Subscribe to push events for real-time updates.
   useBotPush(botId);
-  usePushListener(useCallback((env) => {
-    if (env.type === "message_new" && env.data?.bot_id === botId) {
-      fetchData();
-    }
-  }, [botId, fetchData]));
+  usePushListener(
+    useCallback(
+      (env) => {
+        if (env.type === "message_new" && env.data?.bot_id === botId) {
+          fetchData();
+        }
+      },
+      [botId, fetchData],
+    ),
+  );
 
   useEffect(() => {
     fetchData();
@@ -232,10 +236,10 @@ export function ConsolePage() {
       onDrop={onDrop}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 h-12 border-b bg-background/80 backdrop-blur-sm shrink-0">
+      <div className="flex items-center gap-3 px-4 h-12 border-b bg-background/80 backdrop-blur-sm shrink-0 max-sm:px-2 max-sm:gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-sm" asChild>
+            <Button variant="ghost" size="icon-sm" asChild className="max-sm:size-10">
               <Link to={`/dashboard/accounts/${botId}`}>
                 <ArrowLeft className="h-4 w-4" />
               </Link>
@@ -243,9 +247,9 @@ export function ConsolePage() {
           </TooltipTrigger>
           <TooltipContent>返回账号详情</TooltipContent>
         </Tooltip>
-        <Terminal className="h-4 w-4 text-muted-foreground" />
-        <h1 className="text-sm font-semibold">消息控制台</h1>
-        <Badge variant="outline" className="text-[10px]">
+        <Terminal className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <h1 className="text-sm font-semibold truncate">消息控制台</h1>
+        <Badge variant="outline" className="text-[10px] shrink-0">
           实时推送
         </Badge>
       </div>
@@ -264,7 +268,7 @@ export function ConsolePage() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-6 py-4 bg-muted/20"
+        className="flex-1 overflow-y-auto px-3 py-4 bg-muted/20 sm:px-6"
       >
         <div className="max-w-3xl mx-auto space-y-4">
           {loading ? (
@@ -291,7 +295,7 @@ export function ConsolePage() {
               className={`flex ${m.direction === "inbound" ? "justify-start" : "justify-end"}`}
             >
               <div
-                className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm font-medium ${
+                className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium min-w-0 sm:max-w-[75%] ${
                   m.direction === "inbound"
                     ? "bg-background border border-border/50 text-foreground rounded-bl-none shadow-sm"
                     : "bg-primary text-primary-foreground rounded-br-none shadow-lg shadow-primary/10"
@@ -313,14 +317,14 @@ export function ConsolePage() {
 
       {/* Scroll-to-bottom FAB */}
       {!isAtBottom ? (
-        <div className="absolute bottom-20 right-8 z-10">
+        <div className="absolute bottom-20 right-4 z-10 sm:right-8">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 type="button"
                 size="icon"
                 variant="secondary"
-                className="rounded-full shadow-lg"
+                className="rounded-full shadow-lg max-sm:size-10"
                 onClick={scrollToBottom}
               >
                 <ChevronDown className="h-4 w-4" />
@@ -333,7 +337,7 @@ export function ConsolePage() {
 
       {/* Input area */}
       <div className="border-t bg-background shrink-0">
-        <div className="max-w-3xl mx-auto px-4 py-3 space-y-2">
+        <div className="max-w-3xl mx-auto px-4 py-3 space-y-2 max-sm:pb-[max(0.75rem,var(--safe-bottom))]">
           {/* Status banners */}
           {!canSend ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
@@ -384,7 +388,7 @@ export function ConsolePage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 shrink-0"
+                      className="h-7 w-7 shrink-0 max-sm:size-10"
                       onClick={clearStaged}
                       disabled={sending}
                     >
@@ -414,7 +418,7 @@ export function ConsolePage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground max-sm:size-11"
                     disabled={!canSend || sending}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -447,7 +451,7 @@ export function ConsolePage() {
               <Button
                 type="submit"
                 size="icon"
-                className="h-8 w-8 shrink-0 rounded-xl"
+                className="h-8 w-8 shrink-0 rounded-xl max-sm:size-11"
                 disabled={!canSend || sending || (!input.trim() && !stagedFile)}
               >
                 <Send className="h-3.5 w-3.5" />

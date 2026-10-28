@@ -43,15 +43,17 @@ function thumbUrl(mediaKeys: Record<string, string> | undefined, index: number):
 // --- Text ---
 export function TextItem({ item }: { item: MessageItemData }) {
   if (!item.text) return null;
-  return (
-    <p className="leading-relaxed whitespace-pre-wrap break-words">{item.text}</p>
-  );
+  return <p className="leading-relaxed whitespace-pre-wrap break-words">{item.text}</p>;
 }
 
 // Helper: render item.text as caption if present
 function Caption({ text }: { text?: string }) {
   if (!text) return null;
-  return <p className="leading-relaxed whitespace-pre-wrap break-words text-xs opacity-70 mb-1">{text}</p>;
+  return (
+    <p className="leading-relaxed whitespace-pre-wrap break-words text-xs opacity-70 mb-1">
+      {text}
+    </p>
+  );
 }
 
 // --- Image ---
@@ -152,7 +154,12 @@ export function VideoItem({ item, index, mediaKeys, mediaStatus }: MessageItemPr
         aria-label={`播放视频${item.file_name ? ` ${item.file_name}` : ""}`}
       >
         {thumb ? (
-          <img src={thumb} alt={item.file_name || "视频"} className="max-w-full max-h-64 rounded-lg" loading="lazy" />
+          <img
+            src={thumb}
+            alt={item.file_name || "视频"}
+            className="max-w-full max-h-64 rounded-lg"
+            loading="lazy"
+          />
         ) : (
           <div className="w-48 h-32 bg-muted rounded-lg flex items-center justify-center">
             <Play className="h-8 w-8 text-muted-foreground" />
@@ -207,9 +214,14 @@ export function VoiceItem({ item, index, mediaKeys, mediaStatus }: MessageItemPr
   return (
     <>
       <Caption text={item.text} />
-      <div className="flex items-center gap-2 min-w-[180px]">
+      <div className="flex w-full min-w-0 items-center gap-2">
         <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <audio controls preload="none" className="h-8 max-w-[240px] w-full" aria-label="语音消息">
+        <audio
+          controls
+          preload="none"
+          className="h-8 w-full min-w-0 max-w-[240px]"
+          aria-label="语音消息"
+        >
           <source src={src} />
         </audio>
       </div>
@@ -236,8 +248,12 @@ export function FileItem({ item, index, mediaKeys, mediaStatus, direction }: Mes
   return (
     <>
       <Caption text={item.text} />
-      <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${direction === "inbound" ? "bg-muted/50 border-border/50" : "bg-white/10 border-white/20"}`}>
-        <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${direction === "inbound" ? "bg-primary/10 text-primary" : "bg-white/20 text-white"}`}>
+      <div
+        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${direction === "inbound" ? "bg-muted/50 border-border/50" : "bg-white/10 border-white/20"}`}
+      >
+        <div
+          className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${direction === "inbound" ? "bg-primary/10 text-primary" : "bg-white/20 text-white"}`}
+        >
           <FileText className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
@@ -248,7 +264,7 @@ export function FileItem({ item, index, mediaKeys, mediaStatus, direction }: Mes
             href={src}
             download={item.file_name || ""}
             onClick={(e) => e.stopPropagation()}
-            className={`shrink-0 ${direction === "inbound" ? "text-muted-foreground hover:text-foreground" : "text-white/70 hover:text-white"}`}
+            className={`shrink-0 max-sm:-m-1.5 max-sm:p-3.5 ${direction === "inbound" ? "text-muted-foreground hover:text-foreground" : "text-white/70 hover:text-white"}`}
             aria-label={`下载 ${item.file_name || "文件"}`}
           >
             <Download className="h-4 w-4" />

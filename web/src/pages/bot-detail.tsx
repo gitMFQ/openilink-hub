@@ -183,15 +183,15 @@ export function BotDetailPage() {
       {/* Entity Banner */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
         {/* Identity */}
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
             <BotIcon className="h-7 w-7" />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="min-w-0 space-y-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               {editingDisplayName ? (
                 <form
-                  className="flex items-center gap-1.5"
+                  className="flex items-center gap-1.5 max-sm:w-full"
                   onSubmit={(e) => {
                     e.preventDefault();
                     updateBotMutation.mutate(
@@ -213,30 +213,33 @@ export function BotDetailPage() {
                 >
                   <Input
                     autoFocus
-                    className="h-8 w-48 text-lg font-bold"
+                    className="h-8 w-48 text-lg font-bold max-sm:w-full max-sm:min-w-0 max-sm:flex-1"
                     value={displayNameDraft}
                     onChange={(e) => setDisplayNameDraft(e.target.value)}
                     placeholder={bot.name}
                   />
-                  <Button type="submit" variant="ghost" size="icon-sm">
+                  <Button type="submit" variant="ghost" size="icon-sm" className="max-sm:size-10">
                     <Check className="h-4 w-4" />
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
+                    className="max-sm:size-10"
                     onClick={() => setEditingDisplayName(false)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </form>
               ) : (
-                <div className="flex items-center gap-1.5 group/name">
-                  <h1 className="text-2xl font-bold tracking-tight">{botDisplayName(bot)}</h1>
+                <div className="flex min-w-0 items-center gap-1.5 group/name">
+                  <h1 className="min-w-0 text-2xl font-bold tracking-tight break-words">
+                    {botDisplayName(bot)}
+                  </h1>
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="opacity-0 group-hover/name:opacity-100 transition-opacity"
+                    className="transition-opacity opacity-100 sm:opacity-0 sm:group-hover/name:opacity-100 max-sm:size-10"
                     onClick={() => {
                       setDisplayNameDraft(bot.display_name || "");
                       setEditingDisplayName(true);
@@ -259,11 +262,11 @@ export function BotDetailPage() {
                 </Badge>
               ) : null}
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Cpu className="h-3 w-3" />
+            <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+              <Cpu className="h-3 w-3 shrink-0" />
               <span className="capitalize">{bot.provider}</span>
               <span className="opacity-40">·</span>
-              <span className="font-mono">{bot.id.slice(0, 12)}…</span>
+              <span className="font-mono truncate">{bot.id.slice(0, 12)}…</span>
             </div>
             {bot.send_disabled_reason ? (
               <p className="text-xs text-orange-600">{bot.send_disabled_reason}</p>
@@ -273,20 +276,20 @@ export function BotDetailPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-2 flex-wrap shrink-0">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="max-sm:h-10">
             <Link to={`/dashboard/accounts/${id}/console`}>
               <MessageSquare className="h-3.5 w-3.5" />
               消息控制台
             </Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="max-sm:h-10">
             <Link to={`/dashboard/accounts/${id}/traces`}>
               <Activity className="h-3.5 w-3.5" />
               消息追踪
             </Link>
           </Button>
 
-          <Separator orientation="vertical" className="h-6 mx-1" />
+          <Separator orientation="vertical" className="h-6 mx-1 max-sm:hidden" />
 
           {/* AI toggle */}
           <div className="flex items-center gap-1.5">
@@ -319,7 +322,7 @@ export function BotDetailPage() {
 
           {/* Model selector */}
           {bot.ai_enabled && availableModels.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 max-sm:w-full max-sm:flex-wrap">
               <Label className="text-xs font-bold uppercase text-muted-foreground">模型</Label>
               <Select
                 value={bot.ai_model || DEFAULT_MODEL}
@@ -340,7 +343,7 @@ export function BotDetailPage() {
                   );
                 }}
               >
-                <SelectTrigger className="h-7 text-xs w-48">
+                <SelectTrigger className="h-7 w-48 text-xs max-sm:w-full">
                   <SelectValue placeholder="使用全局默认" />
                 </SelectTrigger>
                 <SelectContent>
@@ -355,7 +358,7 @@ export function BotDetailPage() {
             </div>
           )}
 
-          <Separator orientation="vertical" className="h-6 mx-1" />
+          <Separator orientation="vertical" className="h-6 mx-1 max-sm:hidden" />
 
           {/* Expiry reminder */}
           <div className="flex items-center gap-1.5">
@@ -411,9 +414,9 @@ export function BotDetailPage() {
             )}
           </div>
 
-          <Separator orientation="vertical" className="h-6 mx-1" />
+          <Separator orientation="vertical" className="h-6 mx-1 max-sm:hidden" />
 
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="max-sm:h-10">
             <Link to="/dashboard/accounts">返回列表</Link>
           </Button>
           <Tooltip>
@@ -421,6 +424,7 @@ export function BotDetailPage() {
               <Button
                 variant="destructive"
                 size="icon-sm"
+                className="max-sm:size-10"
                 aria-label="删除账号"
                 disabled={isDeleting}
                 onClick={() => void handleDeleteBot()}
@@ -468,7 +472,7 @@ export function BotDetailPage() {
                               {inst.app_name}
                             </CardTitle>
                             {inst.handle ? (
-                              <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
+                              <p className="min-w-0 truncate text-[11px] font-mono text-muted-foreground mt-0.5">
                                 @{inst.handle}
                               </p>
                             ) : null}
@@ -482,8 +486,8 @@ export function BotDetailPage() {
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardFooter className="pt-2 pb-4 px-4 flex justify-between items-center border-t border-border/40">
-                      <span className="text-[11px] font-mono text-muted-foreground/60">
+                    <CardFooter className="pt-2 pb-4 px-4 flex justify-between items-center gap-2 border-t border-border/40">
+                      <span className="min-w-0 truncate text-[11px] font-mono text-muted-foreground/60">
                         {inst.app_slug}
                       </span>
                       <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
@@ -507,12 +511,14 @@ export function BotDetailPage() {
                 {builtinApps.map((app: any) => (
                   <div
                     key={app.slug || app.id}
-                    className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors"
+                    className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors max-sm:gap-3 max-sm:px-3"
                   >
                     <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-9 w-9" />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold leading-tight">{app.name}</p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="min-w-0 truncate text-sm font-semibold leading-tight">
+                          {app.name}
+                        </p>
                         {installedOnBot.has(app.id) ? (
                           <Badge variant="secondary" className="text-[10px] shrink-0">
                             已安装
@@ -534,7 +540,7 @@ export function BotDetailPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="shrink-0 gap-1.5"
+                        className="shrink-0 gap-1.5 max-sm:h-10"
                         onClick={() => navigate(`/dashboard/accounts/${id}/install/${app.id}`)}
                       >
                         <Download className="h-3.5 w-3.5" />
@@ -555,7 +561,7 @@ export function BotDetailPage() {
                 {listedApps.map((app: any) => (
                   <div
                     key={app.id}
-                    className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors"
+                    className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors max-sm:gap-3 max-sm:px-3"
                   >
                     <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-9 w-9" />
                     <div className="flex-1 min-w-0">
@@ -582,7 +588,7 @@ export function BotDetailPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="shrink-0 gap-1.5"
+                        className="shrink-0 gap-1.5 max-sm:h-10"
                         onClick={() => navigate(`/dashboard/accounts/${id}/install/${app.id}`)}
                       >
                         <Download className="h-3.5 w-3.5" />
@@ -603,7 +609,7 @@ export function BotDetailPage() {
                 {marketplaceApps.map((app) => (
                   <div
                     key={app.slug || app.id}
-                    className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors"
+                    className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors max-sm:gap-3 max-sm:px-3"
                   >
                     <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-9 w-9" />
                     <div className="flex-1 min-w-0">
@@ -633,7 +639,7 @@ export function BotDetailPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="shrink-0 gap-1.5"
+                        className="shrink-0 gap-1.5 max-sm:h-10"
                         disabled={syncing}
                         onClick={() => handleInstallApp(app)}
                       >
@@ -646,7 +652,7 @@ export function BotDetailPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="shrink-0 gap-1.5"
+                        className="shrink-0 gap-1.5 max-sm:h-10"
                         disabled={syncing}
                         onClick={() => handleInstallApp(app)}
                       >

@@ -239,13 +239,15 @@ export function InstallAppPage() {
       </button>
 
       {/* Header: icon + info + handle + install */}
-      <div className="flex items-start gap-4">
-        <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-14 w-14" />
+      <div className="flex items-start gap-3 sm:gap-4">
+        <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-12 w-12 sm:h-14 sm:w-14" />
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold tracking-tight">{app.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight min-w-0 break-words">{app.name}</h1>
             {app.slug && (
-              <span className="text-sm text-muted-foreground font-mono">{app.slug}</span>
+              <span className="text-sm text-muted-foreground font-mono min-w-0 break-all">
+                {app.slug}
+              </span>
             )}
             {app.homepage && (
               <a
@@ -260,20 +262,25 @@ export function InstallAppPage() {
             )}
           </div>
           {app.description && <p className="text-sm text-muted-foreground">{app.description}</p>}
-          <div className="flex items-center gap-3 pt-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex items-center gap-2 min-w-0">
               <Input
                 id="install-handle"
                 value={handle}
                 onChange={(e) => setHandle(e.target.value)}
-                className="h-8 text-xs font-mono w-40"
+                className="h-8 text-xs font-mono w-40 max-w-full min-w-0 max-sm:flex-1"
                 placeholder="如 notify-prod"
               />
-              <span className="text-xs text-muted-foreground font-mono shrink-0">
+              <span className="text-xs text-muted-foreground font-mono min-w-0 truncate">
                 @{handle || "handle"}
               </span>
             </div>
-            <Button size="sm" onClick={handleInstall} disabled={installing}>
+            <Button
+              size="sm"
+              className="shrink-0 max-sm:h-11"
+              onClick={handleInstall}
+              disabled={installing}
+            >
               {installing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               允许并安装
             </Button>
@@ -340,11 +347,13 @@ export function InstallAppPage() {
                           {readScopes.map((scope: string) => (
                             <div
                               key={scope}
-                              className="flex items-center gap-2 text-sm text-muted-foreground"
+                              className="flex items-center gap-2 min-w-0 text-sm text-muted-foreground"
                             >
                               <Eye className="h-3.5 w-3.5 shrink-0" />
-                              <span>{SCOPE_DESCRIPTIONS[scope] || scope}</span>
-                              <span className="font-mono text-xs ml-auto text-muted-foreground/60">
+                              <span className="min-w-0 break-words">
+                                {SCOPE_DESCRIPTIONS[scope] || scope}
+                              </span>
+                              <span className="font-mono text-xs ml-auto shrink-0 text-muted-foreground/60">
                                 {scope}
                               </span>
                             </div>
@@ -361,11 +370,13 @@ export function InstallAppPage() {
                           {writeScopes.map((scope: string) => (
                             <div
                               key={scope}
-                              className="flex items-center gap-2 text-sm text-muted-foreground"
+                              className="flex items-center gap-2 min-w-0 text-sm text-muted-foreground"
                             >
                               <Zap className="h-3.5 w-3.5 shrink-0" />
-                              <span>{SCOPE_DESCRIPTIONS[scope] || scope}</span>
-                              <span className="font-mono text-xs ml-auto text-muted-foreground/60">
+                              <span className="min-w-0 break-words">
+                                {SCOPE_DESCRIPTIONS[scope] || scope}
+                              </span>
+                              <span className="font-mono text-xs ml-auto shrink-0 text-muted-foreground/60">
                                 {scope}
                               </span>
                             </div>
@@ -382,11 +393,13 @@ export function InstallAppPage() {
                           {otherScopes.map((scope: string) => (
                             <div
                               key={scope}
-                              className="flex items-center gap-2 text-sm text-muted-foreground"
+                              className="flex items-center gap-2 min-w-0 text-sm text-muted-foreground"
                             >
                               <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                              <span>{SCOPE_DESCRIPTIONS[scope] || scope}</span>
-                              <span className="font-mono text-xs ml-auto text-muted-foreground/60">
+                              <span className="min-w-0 break-words">
+                                {SCOPE_DESCRIPTIONS[scope] || scope}
+                              </span>
+                              <span className="font-mono text-xs ml-auto shrink-0 text-muted-foreground/60">
                                 {scope}
                               </span>
                             </div>

@@ -72,10 +72,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import * as React from "react";
 
 function SidebarLogo() {
-  const { open } = useSidebar();
+  const { open, isMobile } = useSidebar();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  return open ? (
+  const expanded = open || isMobile;
+  return expanded ? (
     <img src={isDark ? logoWhite : logoBlack} alt="OpeniLink" className="h-7 w-auto" />
   ) : (
     <img src={isDark ? iconWhite : iconBlack} alt="OpeniLink" className="size-7" />
@@ -145,11 +146,11 @@ function LayoutHeader() {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/95 backdrop-blur px-6 sticky top-0 z-40">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger className="-ml-2 h-9 w-9" />
+    <header className="sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between gap-2 border-b bg-background/95 px-3 backdrop-blur max-sm:pt-[var(--safe-top)] sm:px-4 md:min-h-16 md:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 md:gap-4">
+        <SidebarTrigger className="-ml-2" />
         <Separator orientation="vertical" className="h-4 opacity-50" />
-        <Breadcrumb>
+        <Breadcrumb className="min-w-0">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
@@ -164,8 +165,8 @@ function LayoutHeader() {
             {breadcrumbs.length > 0 && <BreadcrumbSeparator className="opacity-30" />}
             {breadcrumbs.map((bc, i) => (
               <React.Fragment key={bc.path}>
-                {i > 0 && <BreadcrumbSeparator className="opacity-30" />}
-                <BreadcrumbItem>
+                {i > 0 && <BreadcrumbSeparator className="opacity-30 max-sm:hidden" />}
+                <BreadcrumbItem className={bc.isLast ? "min-w-0" : "max-sm:hidden"}>
                   {bc.isLast ? (
                     <BreadcrumbPage className="font-bold text-foreground">
                       {bc.label}
@@ -188,7 +189,7 @@ function LayoutHeader() {
       </div>
 
       <TooltipProvider>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
           <div className="hidden lg:flex relative items-center group">
             <Search className="absolute left-3 size-3.5 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
             <Input
@@ -220,7 +221,7 @@ function LayoutHeader() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 max-sm:hidden" asChild>
                 <a
                   href="https://github.com/openilink/openilink-hub"
                   target="_blank"
@@ -234,7 +235,7 @@ function LayoutHeader() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+              <Button variant="ghost" size="icon" className="h-9 w-9 relative max-sm:hidden">
                 <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500/20" />
                 <span className="absolute top-2 right-2 size-2 bg-primary rounded-full border-2 border-background animate-pulse" />
               </Button>
@@ -251,15 +252,22 @@ function SecurityBanner() {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
   return (
-    <div className="flex items-center gap-3 px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-sm">
-      <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0" />
-      <span className="text-amber-700 dark:text-amber-400">
+    <div className="flex items-start gap-2 border-b border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs sm:items-center sm:gap-3 sm:px-6 sm:text-sm">
+      <ShieldAlert className="h-4 w-4 shrink-0 text-amber-500" />
+      <span className="min-w-0 text-amber-700 dark:text-amber-400">
         您的账号尚未设置密码或绑定通行密钥，登出后可能无法再次登录。
-        <Link to="/dashboard/settings/security" className="underline font-medium ml-1 hover:no-underline">
+        <Link
+          to="/dashboard/settings/security"
+          className="underline font-medium ml-1 hover:no-underline"
+        >
           前往设置
         </Link>
       </span>
-      <button onClick={() => setDismissed(true)} className="ml-auto text-amber-500/60 hover:text-amber-500">
+      <button
+        onClick={() => setDismissed(true)}
+        aria-label="关闭提示"
+        className="-mr-1 ml-auto shrink-0 rounded p-1.5 text-amber-500/60 hover:text-amber-500"
+      >
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -278,7 +286,10 @@ export function Layout() {
   }, [isError, navigate]);
 
   useEffect(() => {
-    api.info().then((data) => setVersion(data.version || "")).catch(() => {});
+    api
+      .info()
+      .then((data) => setVersion(data.version || ""))
+      .catch(() => {});
   }, []);
 
   if (!user) return null;
@@ -519,15 +530,13 @@ export function Layout() {
         <SidebarRail />
       </Sidebar>
 
-      <SidebarInset className="flex flex-col bg-background/50 rounded-tl-2xl overflow-hidden">
+      <SidebarInset className="flex flex-col overflow-hidden bg-background/50 md:rounded-tl-2xl">
         <LayoutHeader />
 
-        {user && !user.has_password && !user.has_passkey && !user.has_oauth && (
-          <SecurityBanner />
-        )}
+        {user && !user.has_password && !user.has_passkey && !user.has_oauth && <SecurityBanner />}
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden [&:has([data-full-page])]:overflow-hidden">
-          <div className="h-full mx-auto w-full max-w-[1400px] p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500 [&:has([data-full-page])]:p-0 [&:has([data-full-page])]:max-w-none">
+          <div className="h-full mx-auto w-full max-w-[1400px] p-3 animate-in fade-in slide-in-from-bottom-2 duration-500 max-sm:pb-[max(0.75rem,var(--safe-bottom))] sm:p-4 md:p-6 lg:p-8 [&:has([data-full-page])]:p-0 [&:has([data-full-page])]:max-w-none">
             <Outlet />
           </div>
         </main>

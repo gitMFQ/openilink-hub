@@ -119,14 +119,14 @@ export function AdminOverviewPage() {
       </div>
 
       {loading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
           {METRIC_CONFIG.map((m) => (
             <Card
               key={m.label}
@@ -176,7 +176,7 @@ export function AdminOverviewPage() {
 
       <OIDCConfigCard />
 
-      <div className="grid gap-8 md:grid-cols-2">
+      <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
         <Card className="border-border/50 bg-card/50">
           <CardHeader>
             <CardTitle>AI 配置</CardTitle>
@@ -191,21 +191,27 @@ export function AdminOverviewPage() {
 
               <TabsContent value="basic" className="space-y-4 mt-0">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">接口地址</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">
+                    接口地址
+                  </Label>
                   <Input
                     value={effectiveAIConfig?.base_url || ""}
                     onChange={(e) => updateAIConfig({ base_url: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">默认模型</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">
+                    默认模型
+                  </Label>
                   <Input
                     value={effectiveAIConfig?.model || ""}
                     onChange={(e) => updateAIConfig({ model: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">API Key</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">
+                    API Key
+                  </Label>
                   <Input
                     type="password"
                     value={effectiveAIConfig?.api_key || ""}
@@ -214,7 +220,9 @@ export function AdminOverviewPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">系统提示词</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">
+                    系统提示词
+                  </Label>
                   <Textarea
                     rows={4}
                     value={effectiveAIConfig?.system_prompt || ""}
@@ -224,7 +232,9 @@ export function AdminOverviewPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">历史消息轮数</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">
+                    历史消息轮数
+                  </Label>
                   <Input
                     type="number"
                     min={0}
@@ -232,7 +242,9 @@ export function AdminOverviewPage() {
                     onChange={(e) => updateAIConfig({ max_history: e.target.value })}
                     placeholder="默认 20 轮"
                   />
-                  <p className="text-xs text-muted-foreground">AI 对话时携带的历史消息轮数，0 表示不携带历史。</p>
+                  <p className="text-xs text-muted-foreground">
+                    AI 对话时携带的历史消息轮数，0 表示不携带历史。
+                  </p>
                 </div>
               </TabsContent>
 
@@ -246,7 +258,8 @@ export function AdminOverviewPage() {
                     try {
                       if (effectiveAIConfig?.available_models) {
                         const parsed = JSON.parse(effectiveAIConfig.available_models);
-                        if (Array.isArray(parsed)) models = parsed.filter((s: unknown) => typeof s === "string");
+                        if (Array.isArray(parsed))
+                          models = parsed.filter((s: unknown) => typeof s === "string");
                       }
                     } catch {}
 
@@ -320,7 +333,10 @@ export function AdminOverviewPage() {
                       return (
                         <>
                           {entries.map(([key, val], i) => (
-                            <div key={i} className="flex gap-2 items-center">
+                            <div
+                              key={i}
+                              className="flex flex-col gap-2 sm:flex-row sm:items-center"
+                            >
                               <Input
                                 className="flex-1"
                                 placeholder="Header Name"
@@ -344,7 +360,7 @@ export function AdminOverviewPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                                className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive max-sm:size-10 max-sm:self-end"
                                 onClick={() => sync(entries.filter((_, j) => j !== i))}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -365,24 +381,30 @@ export function AdminOverviewPage() {
                     })()}
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/50">
-                  <div>
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/20 border border-border/50">
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">隐藏思考过程</p>
-                    <p className="text-xs text-muted-foreground">启用后不会将模型的思考内容发送给用户</p>
+                    <p className="text-xs text-muted-foreground">
+                      启用后不会将模型的思考内容发送给用户
+                    </p>
                   </div>
                   <Switch
+                    className="shrink-0"
                     checked={effectiveAIConfig?.hide_thinking === "true"}
                     onCheckedChange={(checked) =>
                       updateAIConfig({ hide_thinking: checked ? "true" : "false" })
                     }
                   />
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/50">
-                  <div>
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/20 border border-border/50">
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">Markdown 转纯文本</p>
-                    <p className="text-xs text-muted-foreground">启用后将 AI 回复中的 Markdown 格式转为纯文本</p>
+                    <p className="text-xs text-muted-foreground">
+                      启用后将 AI 回复中的 Markdown 格式转为纯文本
+                    </p>
                   </div>
                   <Switch
+                    className="shrink-0"
                     checked={effectiveAIConfig?.strip_markdown === "true"}
                     onCheckedChange={(checked) =>
                       updateAIConfig({ strip_markdown: checked ? "true" : "false" })
@@ -393,7 +415,11 @@ export function AdminOverviewPage() {
             </Tabs>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button onClick={handleSaveAI} disabled={saveAIMutation.isPending}>
+            <Button
+              className="max-sm:h-11"
+              onClick={handleSaveAI}
+              disabled={saveAIMutation.isPending}
+            >
               保存
             </Button>
           </CardFooter>
@@ -425,12 +451,12 @@ function RegistrationConfigCard() {
   return (
     <Card className="border-border/50 bg-card/30">
       <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 min-w-0 sm:gap-4">
+            <div className="h-10 w-10 shrink-0 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
               <UserPlus className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-bold">开放注册</p>
               <p className="text-xs text-muted-foreground">
                 关闭后，新用户无法通过密码注册、扫码登录或 OAuth 创建账号。管理员仍可手动创建用户。
@@ -440,6 +466,7 @@ function RegistrationConfigCard() {
           <Button
             variant={regConfig?.enabled === "true" ? "default" : "outline"}
             size="sm"
+            className="shrink-0 max-sm:h-11 max-sm:w-full"
             onClick={handleToggle}
             disabled={setRegConfigMutation.isPending}
           >
@@ -491,7 +518,10 @@ function RegistryConfigCard() {
 
   async function handleImportDefault() {
     try {
-      await createRegistryMutation.mutateAsync({ name: "OpeniLink Hub", url: "https://hub.openilink.com" });
+      await createRegistryMutation.mutateAsync({
+        name: "OpeniLink Hub",
+        url: "https://hub.openilink.com",
+      });
       toast({ title: "已添加官方 Registry" });
     } catch (e: any) {
       toast({ variant: "destructive", title: "添加失败", description: e.message });
@@ -531,12 +561,13 @@ function RegistryConfigCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Expose toggle */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/50">
-          <div>
+        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/20 border border-border/50">
+          <div className="min-w-0">
             <p className="text-sm font-medium">对外暴露 Registry</p>
             <p className="text-xs text-muted-foreground">允许其他 Hub 从此实例拉取应用</p>
           </div>
           <Switch
+            className="shrink-0"
             aria-label="对外暴露 Registry"
             checked={registryConfig?.enabled === "true"}
             onCheckedChange={handleToggleExpose}
@@ -550,10 +581,15 @@ function RegistryConfigCard() {
             Registry 来源
           </p>
           {registries.length === 0 ? (
-            <div className="flex items-center justify-between p-3 rounded-lg border border-dashed bg-muted/10">
+            <div className="flex flex-col gap-3 p-3 rounded-lg border border-dashed bg-muted/10 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">暂无 Registry 来源</p>
               {window.location.origin !== "https://hub.openilink.com" && (
-                <Button size="sm" onClick={handleImportDefault} disabled={adding}>
+                <Button
+                  size="sm"
+                  className="shrink-0 max-sm:h-11 max-sm:w-full"
+                  onClick={handleImportDefault}
+                  disabled={adding}
+                >
                   <Globe className="w-3.5 h-3.5 mr-1" /> 一键导入官方源
                 </Button>
               )}
@@ -562,7 +598,7 @@ function RegistryConfigCard() {
             registries.map((reg: any) => (
               <div
                 key={reg.id}
-                className="flex items-center justify-between p-2.5 rounded-lg border bg-background"
+                className="flex items-center justify-between gap-3 p-2.5 rounded-lg border bg-background"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{reg.name}</p>
@@ -570,6 +606,7 @@ function RegistryConfigCard() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Switch
+                    className="shrink-0"
                     aria-label={`启用 ${reg.name}`}
                     checked={reg.enabled}
                     onCheckedChange={() => handleToggleRegistry(reg)}
@@ -580,7 +617,7 @@ function RegistryConfigCard() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        className="h-7 w-7 text-destructive hover:text-destructive max-sm:size-10"
                         onClick={() => handleDeleteRegistry(reg)}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -599,7 +636,7 @@ function RegistryConfigCard() {
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
             添加 Registry
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               placeholder="名称"
               value={newName}
@@ -610,10 +647,11 @@ function RegistryConfigCard() {
               placeholder="https://hub.openilink.com"
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
-              className="flex-[2]"
+              className="flex-[2] max-sm:flex-none"
             />
             <Button
               size="sm"
+              className="max-sm:h-11 max-sm:w-full"
               onClick={handleAddRegistry}
               disabled={adding || !newName.trim() || !newUrl.trim()}
             >
@@ -723,7 +761,8 @@ function OIDCConfigCard() {
       <CardHeader>
         <CardTitle>OIDC 身份提供商</CardTitle>
         <CardDescription>
-          添加自定义 OIDC 身份提供商（如 Pocket-ID、Keycloak、Authentik 等），用户可通过这些服务登录。
+          添加自定义 OIDC 身份提供商（如 Pocket-ID、Keycloak、Authentik
+          等），用户可通过这些服务登录。
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -731,16 +770,15 @@ function OIDCConfigCard() {
         {providers.length > 0 && (
           <div className="space-y-2">
             {providers.map((p: any) => (
-              <div
-                key={p.slug}
-                className="space-y-1.5 p-3 rounded-lg border bg-background"
-              >
-                <div className="flex items-center justify-between">
+              <div key={p.slug} className="space-y-1.5 p-3 rounded-lg border bg-background">
+                <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex items-center gap-3">
                     <KeyRound className="h-4 w-4 text-muted-foreground shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{p.display_name}</p>
-                      <p className="text-xs text-muted-foreground font-mono truncate">{p.issuer_url}</p>
+                      <p className="text-xs text-muted-foreground font-mono truncate">
+                        {p.issuer_url}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -749,7 +787,7 @@ function OIDCConfigCard() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-7 w-7 max-sm:size-10"
                           onClick={() => handleEdit(p)}
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -762,7 +800,7 @@ function OIDCConfigCard() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          className="h-7 w-7 text-destructive hover:text-destructive max-sm:size-10"
                           onClick={() => handleDelete(p.slug, p.display_name)}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -772,7 +810,7 @@ function OIDCConfigCard() {
                     </Tooltip>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 ml-7">
+                <div className="flex items-center gap-1.5 ml-7 max-sm:ml-0">
                   <p className="text-xs text-muted-foreground font-mono truncate">
                     回调地址: {window.location.origin}/api/auth/oidc/{p.slug}/callback
                   </p>
@@ -781,7 +819,7 @@ function OIDCConfigCard() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 shrink-0"
+                        className="h-5 w-5 shrink-0 max-sm:size-10"
                         onClick={() => handleCopyCallback(p.slug)}
                       >
                         {copiedSlug === p.slug ? (
@@ -801,12 +839,17 @@ function OIDCConfigCard() {
 
         {/* Add / Edit form */}
         <div className="space-y-3 pt-2 border-t">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               {isEditing ? "编辑 OIDC 提供商" : "添加 OIDC 提供商"}
             </p>
             {isEditing && (
-              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={resetForm}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs max-sm:h-9"
+                onClick={resetForm}
+              >
                 取消编辑
               </Button>
             )}
@@ -850,10 +893,17 @@ function OIDCConfigCard() {
           />
           <Button
             size="sm"
+            className="max-sm:h-11 max-sm:w-full"
             onClick={handleSave}
             disabled={saving || !slug.trim() || !issuerUrl.trim() || !clientId.trim()}
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : isEditing ? <Check className="w-3.5 h-3.5 mr-1" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
+            {saving ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+            ) : isEditing ? (
+              <Check className="w-3.5 h-3.5 mr-1" />
+            ) : (
+              <Plus className="w-3.5 h-3.5 mr-1" />
+            )}
             {isEditing ? "保存" : "添加"}
           </Button>
         </div>

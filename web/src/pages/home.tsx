@@ -44,7 +44,7 @@ export function HomePage() {
   }, []);
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col overflow-x-hidden bg-background">
+    <div className="relative isolate flex min-h-dvh flex-col overflow-x-hidden bg-background">
       <HexagonBackground className="opacity-90" hexagonSize={84} hexagonMargin={5} />
 
       <div
@@ -55,7 +55,7 @@ export function HomePage() {
       />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.04),transparent_20%,transparent_80%,rgba(0,0,0,0.18))]" />
 
-      <header className="sticky top-0 z-20 px-6 py-4 sm:px-8 lg:px-12">
+      <header className="sticky top-0 z-20 px-4 py-4 sm:px-8 lg:px-12">
         <div
           className={cn(
             "mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 sm:px-5 transition-all duration-300",
@@ -91,13 +91,13 @@ export function HomePage() {
 
       <main className="relative z-10 flex-1 space-y-8 pb-20 sm:space-y-10 sm:pb-24">
         {/* Hero */}
-        <section className="mx-auto max-w-3xl px-6 py-20 text-center sm:px-8 sm:py-24 lg:py-28">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">OpeniLink Hub</h1>
+        <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-8 sm:py-24 lg:py-28">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">OpeniLink Hub</h1>
           <p className="mt-5 text-base leading-8 text-muted-foreground sm:text-lg">
             开源的微信 Bot 管理与消息中继平台。连接你的微信，通过 WebSocket、HTTP API 或 Webhook
             接收和发送消息。
           </p>
-          <div className="mt-8 flex justify-center gap-4 sm:mt-10">
+          <div className="mt-8 flex flex-wrap justify-center gap-4 sm:mt-10">
             <Link to={loggedIn ? "/dashboard" : "/login"}>
               <Button size="lg" className="px-5 text-sm">
                 开始使用
@@ -112,7 +112,7 @@ export function HomePage() {
         </section>
 
         {/* Features */}
-        <section className="mx-auto max-w-6xl px-6 sm:px-8">
+        <section className="mx-auto max-w-6xl px-4 sm:px-8">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             {features.map((f) => (
               <Card
@@ -130,7 +130,7 @@ export function HomePage() {
         </section>
 
         {/* How it works */}
-        <section className="mx-auto max-w-3xl px-6 pt-6 sm:px-8 sm:pt-8">
+        <section className="mx-auto max-w-3xl px-4 pt-6 sm:px-8 sm:pt-8">
           <h2 className="mb-10 text-center text-2xl font-semibold tracking-tight">工作流程</h2>
           <div className="space-y-7 text-base">
             {[
@@ -154,7 +154,7 @@ export function HomePage() {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground sm:h-9 sm:w-9">
                   {s.step}
                 </span>
-                <div className="space-y-1.5 pt-0.5">
+                <div className="min-w-0 space-y-1.5 pt-0.5">
                   <p className="text-lg font-semibold tracking-tight">{s.title}</p>
                   <p className="text-sm leading-7 text-muted-foreground sm:text-base">{s.desc}</p>
                 </div>
@@ -164,7 +164,7 @@ export function HomePage() {
         </section>
       </main>
 
-      <footer className="relative z-10 border-t border-white/8 px-6 py-6 text-center text-sm text-muted-foreground sm:px-8">
+      <footer className="relative z-10 border-t border-white/8 px-4 py-6 text-center text-sm text-muted-foreground sm:px-8">
         <a
           href="https://github.com/openilink/openilink-hub"
           target="_blank"

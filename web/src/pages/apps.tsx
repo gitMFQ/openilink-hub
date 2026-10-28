@@ -87,14 +87,14 @@ export function AppsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">应用市场</h1>
           <p className="text-sm text-muted-foreground mt-0.5">浏览和安装应用。</p>
         </div>
       </div>
 
-      <div className="relative max-w-sm">
+      <div className="relative w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="搜索应用..."
@@ -203,12 +203,14 @@ function AppGrid({
       {apps.map((app) => (
         <div
           key={`${app.registry || "local"}-${app.slug || app.id}`}
-          className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors"
+          className="group flex items-center gap-3 px-3 py-3.5 bg-card hover:bg-muted/40 transition-colors sm:gap-4 sm:px-4"
         >
           <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-9 w-9" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-semibold leading-tight">{app.name}</p>
+              <p className="text-sm font-semibold leading-tight min-w-0 max-w-full truncate">
+                {app.name}
+              </p>
               {app.version ? (
                 <Badge variant="outline" className="text-[10px] font-mono shrink-0">
                   v{app.version}
@@ -238,7 +240,7 @@ function AppGrid({
             <Button
               size="sm"
               variant="outline"
-              className="shrink-0 gap-1.5"
+              className="shrink-0 gap-1.5 max-sm:h-11"
               onClick={() => onInstall(app)}
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -250,7 +252,7 @@ function AppGrid({
             <Button
               size="sm"
               variant="outline"
-              className="shrink-0 gap-1.5"
+              className="shrink-0 gap-1.5 max-sm:h-11"
               onClick={() => onInstall(app)}
             >
               <Download className="h-3.5 w-3.5" />

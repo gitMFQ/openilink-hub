@@ -67,7 +67,11 @@ export function AdminAppsTab() {
   }
 
   async function handleReject(app: any) {
-    const reason = await prompt({ title: "拒绝 App", description: "请输入拒绝原因", placeholder: "拒绝原因" });
+    const reason = await prompt({
+      title: "拒绝 App",
+      description: "请输入拒绝原因",
+      placeholder: "拒绝原因",
+    });
     if (!reason) return;
     try {
       await reviewMutation.mutateAsync({ appId: app.id, approve: false, reason });
@@ -86,16 +90,18 @@ export function AdminAppsTab() {
           <div
             key={app.id}
             onClick={() => openDetail(app)}
-            className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer hover:border-primary/50 ${selected?.id === app.id ? "border-primary bg-primary/5" : "bg-card"}`}
+            className={`flex flex-col gap-2 p-3 rounded-lg border cursor-pointer hover:border-primary/50 sm:flex-row sm:items-center sm:justify-between sm:p-2.5 ${selected?.id === app.id ? "border-primary bg-primary/5" : "bg-card"}`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-base">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 shrink-0 rounded-lg bg-secondary flex items-center justify-center text-base">
                 {app.icon || <Blocks className="w-4 h-4 text-muted-foreground" />}
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium">{app.name}</span>
-                  <span className="text-xs text-muted-foreground font-mono">{app.slug}</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                  <span className="text-xs font-medium max-w-full truncate">{app.name}</span>
+                  <span className="text-xs text-muted-foreground font-mono min-w-0 truncate">
+                    {app.slug}
+                  </span>
                   {app.listing === "listed" ? (
                     <Badge variant="default" className="text-[10px]">
                       已上架
@@ -121,13 +127,13 @@ export function AdminAppsTab() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 max-sm:flex-wrap">
               {app.listing === "pending" ? (
                 <>
                   <Button
                     size="xs"
                     variant="ghost"
-                    className="text-primary bg-primary/10 hover:bg-primary/20"
+                    className="text-primary bg-primary/10 hover:bg-primary/20 max-sm:h-11"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleApprove(app);
@@ -138,7 +144,7 @@ export function AdminAppsTab() {
                   <Button
                     size="xs"
                     variant="ghost"
-                    className="text-destructive bg-destructive/10 hover:bg-destructive/20"
+                    className="text-destructive bg-destructive/10 hover:bg-destructive/20 max-sm:h-11"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleReject(app);
@@ -152,7 +158,9 @@ export function AdminAppsTab() {
                 size="xs"
                 variant={app.listing === "listed" ? "ghost" : "secondary"}
                 className={
-                  app.listing === "listed" ? "text-primary bg-primary/10 hover:bg-primary/20" : ""
+                  app.listing === "listed"
+                    ? "text-primary bg-primary/10 hover:bg-primary/20 max-sm:h-11"
+                    : "max-sm:h-11"
                 }
                 onClick={(e) => toggleListing(e, app)}
               >
@@ -228,13 +236,17 @@ function AppDetailView({
   return (
     <>
       <div className="p-4 border-b">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
           {app.icon ? <span className="text-lg">{app.icon}</span> : null}
-          <span className="font-semibold">{app.name}</span>
-          <span className="text-xs text-muted-foreground font-mono">{app.slug}</span>
+          <span className="font-semibold min-w-0 max-w-full truncate">{app.name}</span>
+          <span className="text-xs text-muted-foreground font-mono min-w-0 truncate">
+            {app.slug}
+          </span>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5">{app.description || "无描述"}</p>
-        <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground mt-0.5 break-words">
+          {app.description || "无描述"}
+        </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
           {app.owner_name ? <span>拥有者: {app.owner_name}</span> : null}
           {app.homepage ? (
             <a
@@ -255,17 +267,17 @@ function AppDetailView({
           <p className="text-xs font-medium">工具 ({tools.length})</p>
           {tools.map((t: any, i: number) => (
             <div key={i} className="text-xs p-2 rounded border bg-card space-y-0.5">
-              <div className="flex items-center gap-2">
-                <code className="font-mono font-medium">{t.name}</code>
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <code className="font-mono font-medium min-w-0 break-all">{t.name}</code>
                 {t.command ? (
                   <Badge variant="outline" className="text-[10px] font-mono">
                     /{t.command}
                   </Badge>
                 ) : null}
               </div>
-              <p className="text-muted-foreground">{t.description}</p>
+              <p className="text-muted-foreground break-words">{t.description}</p>
               {t.parameters ? (
-                <pre className="text-[10px] font-mono text-muted-foreground mt-1 overflow-x-auto">
+                <pre className="text-[10px] font-mono text-muted-foreground mt-1 max-w-full overflow-x-auto">
                   {typeof t.parameters === "string"
                     ? t.parameters
                     : JSON.stringify(t.parameters, null, 2)}
@@ -305,20 +317,20 @@ function AppDetailView({
         </div>
       ) : null}
 
-      <div className="p-4 flex justify-between">
+      <div className="p-4 flex flex-col gap-2 sm:flex-row sm:justify-between">
         <div className="flex gap-2">
-          <Button variant="destructive" size="sm" onClick={onDelete}>
+          <Button variant="destructive" size="sm" className="max-sm:h-11" onClick={onDelete}>
             <Trash2 className="w-3.5 h-3.5 mr-1" /> 删除
           </Button>
-          <Button variant="outline" size="sm" onClick={onToggleListing}>
+          <Button variant="outline" size="sm" className="max-sm:h-11" onClick={onToggleListing}>
             {app.listing === "listed" ? "下架" : "上架"}
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onEdit}>
+          <Button variant="outline" size="sm" className="max-sm:h-11" onClick={onEdit}>
             <Pencil className="w-3.5 h-3.5 mr-1" /> 编辑
           </Button>
-          <Button variant="outline" size="sm" onClick={onClose}>
+          <Button variant="outline" size="sm" className="max-sm:h-11" onClick={onClose}>
             关闭
           </Button>
         </div>
@@ -373,9 +385,9 @@ function AppEditForm({
 
   return (
     <div className="p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">编辑 App</h3>
-        <Button variant="ghost" size="icon-xs" onClick={onCancel}>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium min-w-0 truncate">编辑 App</h3>
+        <Button variant="ghost" size="icon-xs" className="max-sm:size-11" onClick={onCancel}>
           <X className="w-4 h-4" />
         </Button>
       </div>
@@ -393,18 +405,18 @@ function AppEditForm({
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           className="h-8 text-xs"
         />
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             placeholder="图标（emoji）"
             value={form.icon}
             onChange={(e) => setForm({ ...form, icon: e.target.value })}
-            className="h-8 text-xs w-24"
+            className="h-8 text-xs w-full sm:w-24"
           />
           <Input
             placeholder="主页 URL"
             value={form.homepage}
             onChange={(e) => setForm({ ...form, homepage: e.target.value })}
-            className="h-8 text-xs flex-1"
+            className="h-8 text-xs flex-1 min-w-0"
           />
         </div>
       </div>
@@ -442,10 +454,10 @@ function AppEditForm({
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={onCancel}>
+        <Button variant="outline" size="sm" className="max-sm:h-11" onClick={onCancel}>
           取消
         </Button>
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button size="sm" className="max-sm:h-11" onClick={handleSave} disabled={saving}>
           {saving ? "..." : "保存"}
         </Button>
       </div>

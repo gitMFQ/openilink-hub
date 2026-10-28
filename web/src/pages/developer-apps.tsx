@@ -40,14 +40,18 @@ export function DeveloperAppsPage() {
   function handleCreate() {
     const name = newName.trim();
     if (!name) return;
-    createAppMutation.mutate({ name }, {
-      onSuccess: (app: any) => {
-        setDialogOpen(false);
-        setNewName("");
-        navigate(`/dashboard/developer/apps/${app.id}`);
+    createAppMutation.mutate(
+      { name },
+      {
+        onSuccess: (app: any) => {
+          setDialogOpen(false);
+          setNewName("");
+          navigate(`/dashboard/developer/apps/${app.id}`);
+        },
+        onError: (e) =>
+          toast({ variant: "destructive", title: "创建失败", description: e.message }),
       },
-      onError: (e) => toast({ variant: "destructive", title: "创建失败", description: e.message }),
-    });
+    );
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -59,12 +63,12 @@ export function DeveloperAppsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">我的应用</h1>
           <p className="text-sm text-muted-foreground mt-0.5">管理你创建的应用。</p>
         </div>
-        <Button onClick={openDialog} className="gap-1.5 shrink-0">
+        <Button onClick={openDialog} className="gap-1.5 shrink-0 max-sm:h-11">
           <Plus className="h-4 w-4" />
           新建应用
         </Button>
@@ -99,7 +103,7 @@ export function DeveloperAppsPage() {
               key={app.id}
               role="button"
               tabIndex={0}
-              className="group flex items-center gap-4 px-4 py-3.5 bg-card hover:bg-muted/40 transition-colors cursor-pointer"
+              className="group flex items-center gap-3 px-3 py-3.5 bg-card hover:bg-muted/40 transition-colors cursor-pointer sm:gap-4 sm:px-4"
               onClick={() => navigate(`/dashboard/developer/apps/${app.id}`)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -110,12 +114,16 @@ export function DeveloperAppsPage() {
             >
               <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-9 w-9" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-tight">{app.name}</p>
+                <p className="text-sm font-semibold leading-tight truncate">{app.name}</p>
                 {app.slug ? (
-                  <p className="font-mono text-xs text-muted-foreground mt-0.5">{app.slug}</p>
+                  <p className="font-mono text-xs text-muted-foreground mt-0.5 truncate">
+                    {app.slug}
+                  </p>
                 ) : null}
               </div>
-              <ListingBadge listing={app.listing} />
+              <div className="shrink-0">
+                <ListingBadge listing={app.listing} />
+              </div>
             </div>
           ))}
         </div>

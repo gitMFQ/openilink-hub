@@ -61,7 +61,12 @@ export function ChannelDetailPage() {
   const activeTab = location.pathname.split("/").pop() || "overview";
 
   const { data: bot, isLoading: botLoading, isError: botError } = useBot(botId || "");
-  const { data: channels, isLoading: channelsLoading, isError: channelsError, refetch: refetchChannels } = useBotChannels(botId || "");
+  const {
+    data: channels,
+    isLoading: channelsLoading,
+    isError: channelsError,
+    refetch: refetchChannels,
+  } = useBotChannels(botId || "");
   const channel = (channels || []).find((c: any) => c.id === channelId) || null;
   const loading = botLoading || channelsLoading;
   const fetchError = botError || channelsError;
@@ -101,7 +106,7 @@ export function ChannelDetailPage() {
   if (loading)
     return (
       <div className="space-y-6">
-        <Skeleton className="h-12 w-[300px]" />
+        <Skeleton className="h-12 w-full max-w-[300px]" />
         <Skeleton className="h-64 w-full" />
       </div>
     );
@@ -110,7 +115,9 @@ export function ChannelDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Info className="h-10 w-10 text-muted-foreground opacity-20 mb-4" />
-        <p className="text-sm font-medium text-muted-foreground">{fetchError ? "加载失败" : "未找到"}</p>
+        <p className="text-sm font-medium text-muted-foreground">
+          {fetchError ? "加载失败" : "未找到"}
+        </p>
         <Button variant="link" asChild>
           <Link to={`/dashboard/accounts/${botId}/channels`}>返回列表</Link>
         </Button>
@@ -122,23 +129,25 @@ export function ChannelDetailPage() {
       {ConfirmDialog}
       {/* Page Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0 shadow-sm border border-primary/20">
             <Cable className="h-6 w-6" />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">{channel.name}</h1>
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="min-w-0 text-2xl font-bold tracking-tight break-words max-sm:text-xl">
+                {channel.name}
+              </h1>
               <Button
                 variant={channel.enabled ? "default" : "outline"}
                 size="sm"
-                className="h-6 px-2 text-[10px] uppercase font-bold rounded-full"
+                className="h-6 px-2 text-[10px] uppercase font-bold rounded-full max-sm:h-9 max-sm:px-3"
                 onClick={handleToggle}
               >
                 {channel.enabled ? "已启用" : "已停用"}
               </Button>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-mono">
               <Link
                 to={`/dashboard/accounts/${botId}`}
                 className="hover:text-primary transition-colors flex items-center gap-1"
@@ -150,15 +159,21 @@ export function ChannelDetailPage() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={load} className="h-9 w-9 p-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={load}
+            className="h-9 w-9 p-0 max-sm:size-10"
+            aria-label="刷新"
+          >
             <RotateCw className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleDelete}
-            className="h-9 gap-2 text-destructive border-destructive/20 hover:bg-destructive/10"
+            className="h-9 gap-2 text-destructive border-destructive/20 hover:bg-destructive/10 max-sm:h-10"
           >
             <Trash2 className="h-4 w-4" /> <span className="hidden sm:inline">删除</span>
           </Button>
@@ -226,17 +241,21 @@ export function ChannelDetailPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">频道密钥</p>
-                  <div className="flex items-center gap-2">
-                    <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono truncate max-w-[140px]">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <code className="min-w-0 text-xs bg-muted px-1.5 py-0.5 rounded font-mono truncate max-w-[140px]">
                       {channel.api_key}
                     </code>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-6 w-6 max-sm:size-10"
                       onClick={() => {
                         if (!navigator.clipboard?.writeText) {
-                          toast({ variant: "destructive", title: "复制失败", description: "当前浏览器不支持自动复制，请手动选中复制" });
+                          toast({
+                            variant: "destructive",
+                            title: "复制失败",
+                            description: "当前浏览器不支持自动复制，请手动选中复制",
+                          });
                           return;
                         }
                         navigator.clipboard
@@ -245,7 +264,11 @@ export function ChannelDetailPage() {
                             toast({ title: "已复制 API Key" });
                           })
                           .catch(() => {
-                            toast({ variant: "destructive", title: "复制失败", description: "请手动选中复制" });
+                            toast({
+                              variant: "destructive",
+                              title: "复制失败",
+                              description: "请手动选中复制",
+                            });
                           });
                       }}
                     >
@@ -255,7 +278,7 @@ export function ChannelDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">接口地址</p>
-                  <p className="text-[10px] font-mono opacity-70 truncate">
+                  <p className="min-w-0 text-[10px] font-mono opacity-70 truncate">
                     {window.location.origin}/api/v1/channels
                   </p>
                 </div>
@@ -310,11 +333,11 @@ export function ChannelDetailPage() {
               <div className="rounded-lg bg-muted/50 p-4 border font-mono text-[11px] space-y-4 leading-relaxed">
                 <div>
                   <p className="text-primary font-bold mb-1">// WebSocket（实时推送）</p>
-                  <code className="block bg-background p-2 rounded border">{`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/api/v1/channels/connect?key=${channel.api_key.slice(0, 12)}...`}</code>
+                  <code className="block max-w-full overflow-x-auto bg-background p-2 rounded border">{`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/api/v1/channels/connect?key=${channel.api_key.slice(0, 12)}...`}</code>
                 </div>
                 <div>
                   <p className="text-primary font-bold mb-1">// HTTP POST（发送回复）</p>
-                  <code className="block bg-background p-2 rounded border">{`POST ${window.location.origin}/api/v1/channels/send?key=${channel.api_key.slice(0, 12)}...`}</code>
+                  <code className="block max-w-full overflow-x-auto bg-background p-2 rounded border">{`POST ${window.location.origin}/api/v1/channels/send?key=${channel.api_key.slice(0, 12)}...`}</code>
                 </div>
               </div>
             </CardContent>
@@ -412,7 +435,7 @@ function WebhookTab({
                 <Button
                   key={t}
                   variant={form.authType === t ? "default" : "outline"}
-                  className="h-7 px-3 py-1 uppercase text-[10px] rounded-full"
+                  className="h-7 px-3 py-1 uppercase text-[10px] rounded-full max-sm:h-10"
                   onClick={() => setForm({ ...form, authType: t as any })}
                 >
                   {t}
@@ -473,7 +496,7 @@ function WebhookTab({
               placeholder={`function onRequest(ctx) {\n  // 转换消息格式...\n}`}
               value={form.script}
               onChange={(e) => setForm({ ...form, script: e.target.value })}
-              className="w-full h-40 bg-muted/30 border rounded-md p-3 font-mono text-[11px] focus:outline-none"
+              className="w-full max-w-full h-40 bg-muted/30 border rounded-md p-3 font-mono text-[11px] focus:outline-none"
             />
             <p className="text-[10px] text-muted-foreground">
               脚本在安全沙箱中运行，支持 reply() 和修改 ctx.body。
@@ -530,8 +553,8 @@ function AITab({
   return (
     <Card className="border-border/50 max-w-3xl">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0 space-y-1">
             <CardTitle>AI 自动回复</CardTitle>
             <CardDescription>收到消息后自动用 AI 回复。</CardDescription>
           </div>
@@ -548,10 +571,11 @@ function AITab({
         <CardContent className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2">
           <div className="space-y-3">
             <p className="text-xs font-medium">模型来源</p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={form.source === "builtin" ? "default" : "outline"}
                 size="sm"
+                className="max-sm:h-10"
                 onClick={() => setForm({ ...form, source: "builtin" })}
               >
                 系统内置
@@ -559,6 +583,7 @@ function AITab({
               <Button
                 variant={form.source === "custom" ? "default" : "outline"}
                 size="sm"
+                className="max-sm:h-10"
                 onClick={() => setForm({ ...form, source: "custom" })}
               >
                 自定义接口 (OpenAI 协议)
@@ -606,7 +631,7 @@ function AITab({
               placeholder="你是一个智能助理..."
             />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-2">
             <div className="space-y-1">
               <label className="text-xs font-medium">上下文深度</label>
               <Input
@@ -723,7 +748,12 @@ function FilterTab({
 }
 
 function WebhookLogsTab({ channel, botId }: { channel: any; botId: string }) {
-  const { data: logs = [], isLoading: loading, isError: logsError, refetch } = useWebhookLogs(botId, channel.id);
+  const {
+    data: logs = [],
+    isLoading: loading,
+    isError: logsError,
+    refetch,
+  } = useWebhookLogs(botId, channel.id);
 
   // Push-driven updates: useBotPush subscribes to events; PushProvider
   // auto-invalidates webhook-logs cache on message_new events.
@@ -731,20 +761,25 @@ function WebhookLogsTab({ channel, botId }: { channel: any; botId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">最近 50 条请求记录</p>
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => refetch()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs max-sm:h-10 max-sm:px-4"
+          onClick={() => refetch()}
+        >
           刷新
         </Button>
       </div>
       <div className="rounded-xl border overflow-hidden">
-        <Table>
+        <Table className="min-w-[420px]">
           <TableHeader className="bg-muted/30">
             <TableRow>
-              <TableHead>状态</TableHead>
-              <TableHead>方法</TableHead>
-              <TableHead>耗时</TableHead>
-              <TableHead className="text-right">请求时间</TableHead>
+              <TableHead className="whitespace-nowrap">状态</TableHead>
+              <TableHead className="whitespace-nowrap">方法</TableHead>
+              <TableHead className="whitespace-nowrap">耗时</TableHead>
+              <TableHead className="text-right whitespace-nowrap">请求时间</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

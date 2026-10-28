@@ -8,18 +8,31 @@ export function ToolsDisplay({ tools }: { tools: any[] }) {
       <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">命令</h4>
       <div className="grid gap-2">
         {tools.map((tool: any) => (
-          <div key={tool.name} className="flex items-start gap-3 p-2.5 rounded-lg border bg-muted/20">
+          <div
+            key={tool.name}
+            className="flex items-start gap-2 p-2.5 rounded-lg border bg-muted/20 sm:gap-3"
+          >
             {tool.command && (
-              <Badge variant="secondary" className="font-mono text-xs shrink-0">/{tool.command}</Badge>
+              <Badge
+                variant="secondary"
+                className="font-mono text-xs shrink-0 max-sm:max-w-[50%] max-sm:truncate"
+              >
+                /{tool.command}
+              </Badge>
             )}
             <div className="min-w-0">
               <p className="text-sm font-medium">{tool.description || tool.name}</p>
               {tool.parameters?.properties && (
                 <div className="flex flex-wrap gap-1 mt-1">
                   {Object.entries(tool.parameters.properties).map(([key, prop]: [string, any]) => (
-                    <span key={key} className="text-[10px] text-muted-foreground font-mono">
+                    <span
+                      key={key}
+                      className="text-[10px] text-muted-foreground font-mono break-all"
+                    >
                       {key}
-                      {prop.description && <span className="text-muted-foreground/60"> ({prop.description})</span>}
+                      {prop.description && (
+                        <span className="text-muted-foreground/60"> ({prop.description})</span>
+                      )}
                     </span>
                   ))}
                 </div>

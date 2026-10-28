@@ -45,13 +45,13 @@ export function TimelineView({ spans, selectedSpanId, onSelectSpan }: TimelineVi
   }
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0 min-w-[320px] sm:min-w-0">
       {/* Time axis header */}
       <div className="flex border-b border-border/50 pb-1 mb-1">
-        <div className="w-[220px] shrink-0 text-[10px] text-muted-foreground font-medium px-2">
+        <div className="w-[132px] shrink-0 truncate text-[10px] text-muted-foreground font-medium px-2 sm:w-[220px]">
           Span
         </div>
-        <div className="flex-1 relative h-5">
+        <div className="min-w-0 flex-1 relative h-5">
           {Array.from({ length: TICK_COUNT + 1 }).map((_, i) => {
             const ms = (traceDuration * i) / TICK_COUNT;
             return (
@@ -68,9 +68,9 @@ export function TimelineView({ spans, selectedSpanId, onSelectSpan }: TimelineVi
       </div>
 
       {/* Span rows with column-level tick overlay */}
-      <div className="flex">
+      <div className="flex min-w-0">
         {/* Label column */}
-        <div className="w-[220px] shrink-0">
+        <div className="w-[132px] shrink-0 sm:w-[220px]">
           {rows.map(({ span, depth }) => {
             const children = tree.get(span.span_id) || [];
             const hasChildren = children.length > 0;
@@ -82,16 +82,21 @@ export function TimelineView({ spans, selectedSpanId, onSelectSpan }: TimelineVi
                 key={span.span_id}
                 role="button"
                 tabIndex={0}
-                className={`flex items-center h-8 cursor-pointer transition-colors ${
+                className={`flex min-w-0 items-center h-11 cursor-pointer transition-colors sm:h-8 ${
                   isSelected ? "bg-primary/10" : "hover:bg-muted/50"
                 }`}
                 style={{ paddingLeft: `${8 + depth * 16}px` }}
                 onClick={() => onSelectSpan(span.span_id)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelectSpan(span.span_id); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectSpan(span.span_id);
+                  }
+                }}
               >
                 {hasChildren ? (
                   <button
-                    className="w-4 h-4 flex items-center justify-center shrink-0"
+                    className="flex size-7 shrink-0 items-center justify-center sm:size-4"
                     aria-label={isCollapsed ? "展开" : "折叠"}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -105,17 +110,26 @@ export function TimelineView({ spans, selectedSpanId, onSelectSpan }: TimelineVi
                     )}
                   </button>
                 ) : (
-                  <div className="w-4 h-4 shrink-0" />
+                  <div className="size-7 shrink-0 sm:size-4" />
                 )}
                 <StatusIcon code={span.status_code} size="w-3 h-3" />
-                <span className="text-[11px] font-mono truncate ml-1" title={span.status_code === "error" && span.status_message ? `❌ ${span.status_message}` : span.name}>{span.name}</span>
+                <span
+                  className="min-w-0 text-[11px] font-mono truncate ml-1"
+                  title={
+                    span.status_code === "error" && span.status_message
+                      ? `❌ ${span.status_message}`
+                      : span.name
+                  }
+                >
+                  {span.name}
+                </span>
               </div>
             );
           })}
         </div>
 
         {/* Bar column with single tick overlay */}
-        <div className="flex-1 relative">
+        <div className="min-w-0 flex-1 relative">
           {/* Tick lines rendered once, spanning entire column */}
           {Array.from({ length: TICK_COUNT + 1 }).map((_, i) => (
             <div
@@ -135,16 +149,22 @@ export function TimelineView({ spans, selectedSpanId, onSelectSpan }: TimelineVi
             return (
               <div
                 key={span.span_id}
-                className={`relative h-8 flex items-center cursor-pointer transition-colors ${
+                className={`relative flex h-11 items-center cursor-pointer transition-colors sm:h-8 ${
                   isSelected ? "bg-primary/10" : "hover:bg-muted/50"
                 }`}
                 onClick={() => onSelectSpan(span.span_id)}
               >
                 <div
                   className={`absolute h-5 rounded-sm flex items-center px-1.5 ${
-                    span.status_code === "error" ? "bg-destructive/15" : (kindBgLight[span.kind] || "bg-gray-500/15")
+                    span.status_code === "error"
+                      ? "bg-destructive/15"
+                      : kindBgLight[span.kind] || "bg-gray-500/15"
                   } border ${
-                    span.status_code === "error" ? "border-destructive/50" : isSelected ? "border-primary/50" : "border-transparent"
+                    span.status_code === "error"
+                      ? "border-destructive/50"
+                      : isSelected
+                        ? "border-primary/50"
+                        : "border-transparent"
                   }`}
                   style={{
                     left: `${barLeft}%`,
@@ -154,7 +174,9 @@ export function TimelineView({ spans, selectedSpanId, onSelectSpan }: TimelineVi
                 >
                   <div
                     className={`h-full rounded-sm absolute inset-y-0 left-0 ${
-                      span.status_code === "error" ? "bg-destructive" : (kindColors[span.kind] || "bg-gray-500")
+                      span.status_code === "error"
+                        ? "bg-destructive"
+                        : kindColors[span.kind] || "bg-gray-500"
                     } opacity-30`}
                     style={{ width: "100%" }}
                   />

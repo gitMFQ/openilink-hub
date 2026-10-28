@@ -125,13 +125,18 @@ export function BotsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">账号管理</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight max-sm:text-xl">账号管理</h1>
           <p className="text-sm text-muted-foreground mt-0.5">管理你的微信账号。</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" onClick={() => refetch()} disabled={loading}>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            disabled={loading}
+            className="max-sm:h-10"
+          >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> 刷新
           </Button>
           <Dialog
@@ -143,7 +148,7 @@ export function BotsPage() {
             }}
           >
             <DialogTrigger asChild>
-              <Button className="px-6 shadow-lg shadow-primary/20">
+              <Button className="px-6 shadow-lg shadow-primary/20 max-sm:h-10">
                 <Plus className="mr-2 h-4 w-4" /> 添加账号
               </Button>
             </DialogTrigger>
@@ -152,7 +157,7 @@ export function BotsPage() {
                 <DialogTitle className="text-xl">扫码登录</DialogTitle>
                 <DialogDescription>使用微信扫码登录。</DialogDescription>
               </DialogHeader>
-              <div className="flex flex-col items-center justify-center gap-8 py-12">
+              <div className="flex flex-col items-center justify-center gap-8 py-8 sm:py-12">
                 <div className="relative group">
                   <div className="absolute -inset-4 bg-primary/5 rounded-[2rem] blur-xl group-hover:bg-primary/10 transition-all" />
                   {qrUrl ? (
@@ -178,19 +183,19 @@ export function BotsPage() {
       </div>
 
       {loading && bots.length === 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="h-[220px] animate-pulse bg-muted/20" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {bots.map((bot) => (
             <BotInstanceCard key={bot.id} bot={bot} onRebind={() => setBinding(true)} />
           ))}
 
           {bots.length === 0 ? (
-            <div className="col-span-full py-24 border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center text-center bg-muted/5">
+            <div className="col-span-full py-16 border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center text-center bg-muted/5 sm:py-24">
               <div className="h-20 w-20 rounded-3xl bg-background border shadow-sm flex items-center justify-center mb-6">
                 <BotIcon className="h-10 w-10 text-primary/40" />
               </div>
@@ -256,7 +261,7 @@ function BotInstanceCard({ bot, onRebind }: { bot: any; onRebind: () => void }) 
   return (
     <Card className="group flex flex-col border-border/50 hover:border-primary/20 hover:shadow-lg transition-all duration-200">
       {ConfirmDialog}
-      <CardContent className="p-5 flex-1 space-y-4">
+      <CardContent className="p-5 flex-1 space-y-4 max-sm:p-4">
         {/* Header row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
@@ -282,14 +287,17 @@ function BotInstanceCard({ bot, onRebind }: { bot: any; onRebind: () => void }) 
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
+                className="shrink-0 mt-0.5 transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100 max-sm:size-10"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               {bot.status !== "session_expired" ? (
-                <DropdownMenuItem onClick={() => handleAction("reconnect")} className="gap-2">
+                <DropdownMenuItem
+                  onClick={() => handleAction("reconnect")}
+                  className="gap-2 max-sm:py-2.5"
+                >
                   <RefreshCw className="h-3.5 w-3.5" /> 重新连接
                 </DropdownMenuItem>
               ) : null}
@@ -298,7 +306,7 @@ function BotInstanceCard({ bot, onRebind }: { bot: any; onRebind: () => void }) 
                   e.preventDefault();
                   void handleAction("delete");
                 }}
-                className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
+                className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive max-sm:py-2.5"
               >
                 <Trash2 className="h-3.5 w-3.5" /> 删除账号
               </DropdownMenuItem>
@@ -307,7 +315,7 @@ function BotInstanceCard({ bot, onRebind }: { bot: any; onRebind: () => void }) 
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <MessageCircle className="h-3.5 w-3.5" />
             <span>{bot.msg_count ?? 0} 消息</span>
@@ -344,10 +352,10 @@ function BotInstanceCard({ bot, onRebind }: { bot: any; onRebind: () => void }) 
       </CardContent>
 
       {/* Slim footer: meta info + navigate link */}
-      <div className="mx-5 mb-5 pt-3 border-t border-border/40 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
+      <div className="mx-5 mb-5 pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 max-sm:mx-4 max-sm:mb-4">
+        <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground/60">
           <Cpu className="h-3 w-3 shrink-0" />
-          <span className="capitalize">{bot.provider || "未知"}</span>
+          <span className="capitalize truncate">{bot.provider || "未知"}</span>
           <span className="mx-0.5 opacity-40">·</span>
           <span className="font-mono">{bot.id.slice(0, 8)}</span>
         </div>

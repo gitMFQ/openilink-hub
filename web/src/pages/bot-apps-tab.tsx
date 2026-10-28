@@ -56,14 +56,19 @@ export function BotAppsTab({ botId }: { botId: string }) {
   return (
     <div className="space-y-6 mt-4">
       {ConfirmDialog}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h3 className="text-sm font-semibold">已安装的应用</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             管理此账号上安装的应用，控制权限和状态。
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setShowInstall(true)}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowInstall(true)}
+          className="max-sm:h-10 max-sm:shrink-0"
+        >
           <Plus className="w-3.5 h-3.5 mr-1" /> 安装应用
         </Button>
       </div>
@@ -81,29 +86,33 @@ export function BotAppsTab({ botId }: { botId: string }) {
           {installations.map((inst) => (
             <Card key={inst.id}>
               <CardContent className="py-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
                     <AppIcon icon={inst.app_icon} iconUrl={inst.app_icon_url} size="h-10 w-10" />
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">{inst.app_name}</span>
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="min-w-0 truncate text-sm font-semibold">
+                          {inst.app_name}
+                        </span>
                         {inst.handle ? (
                           <Badge variant="secondary" className="text-[10px] font-mono">
                             @{inst.handle}
                           </Badge>
                         ) : null}
                       </div>
-                      <p className="text-xs text-muted-foreground font-mono">{inst.app_slug}</p>
+                      <p className="min-w-0 truncate text-xs text-muted-foreground font-mono">
+                        {inst.app_slug}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
                     <Badge variant={inst.enabled ? "default" : "outline"} className="text-[10px]">
                       {inst.enabled ? "运行中" : "已停用"}
                     </Badge>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 text-xs"
+                      className="h-7 text-xs max-sm:h-10 max-sm:px-4"
                       onClick={() => handleToggle(inst)}
                     >
                       {inst.enabled ? "停用" : "启用"}
@@ -111,7 +120,7 @@ export function BotAppsTab({ botId }: { botId: string }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-xs text-destructive"
+                      className="h-7 text-xs text-destructive max-sm:size-10 max-sm:px-0"
                       aria-label="卸载"
                       onClick={() => handleUninstall(inst.app_id, inst.id)}
                     >
@@ -221,9 +230,11 @@ function InstallDialog({
               <div className="sm:w-2/5 space-y-4 sm:border-r sm:pr-6">
                 <div className="flex items-center gap-3">
                   <AppIcon icon={confirmApp.icon} iconUrl={confirmApp.icon_url} size="h-14 w-14" />
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-lg font-bold">{confirmApp.name}</h3>
-                    <p className="text-xs text-muted-foreground font-mono">{confirmApp.slug}</p>
+                    <p className="text-xs text-muted-foreground font-mono break-all">
+                      {confirmApp.slug}
+                    </p>
                   </div>
                 </div>
                 {confirmApp.description ? (
@@ -380,13 +391,13 @@ function InstallDialog({
               {filtered.map((app) => (
                 <div
                   key={app.id}
-                  className="flex items-center justify-between p-2.5 rounded-lg border bg-background hover:bg-muted/30 transition-colors"
+                  className="flex items-center justify-between gap-2 p-2.5 rounded-lg border bg-background hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-9 w-9" />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-medium">{app.name}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="min-w-0 truncate text-sm font-medium">{app.name}</span>
                       </div>
                       {app.description ? (
                         <p className="text-xs text-muted-foreground truncate">{app.description}</p>
@@ -396,6 +407,7 @@ function InstallDialog({
                   <Button
                     size="sm"
                     variant="outline"
+                    className="shrink-0 max-sm:h-10"
                     onClick={() => {
                       setConfirmApp(app);
                       setHandle(app.slug || "");

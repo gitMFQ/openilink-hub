@@ -73,36 +73,41 @@ export function AppDetailPage() {
   // Convenience: invalidate app detail cache after mutations
   const refreshApp = () => queryClient.invalidateQueries({ queryKey: queryKeys.apps.detail(id!) });
 
-  if (isError) { navigate(backPath); return null; }
+  if (isError) {
+    navigate(backPath);
+    return null;
+  }
   if (!app) return null;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Link
           to={backPath}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground max-sm:inline-flex max-sm:size-11 max-sm:shrink-0 max-sm:items-center max-sm:justify-center"
           aria-label="返回我的应用"
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <AppIcon icon={app.icon} iconUrl={app.icon_url} size="h-8 w-8" />
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">{app.name}</h1>
-          <p className="text-xs text-muted-foreground font-mono">{app.slug}</p>
+          <h1 className="text-2xl font-bold tracking-tight break-words">{app.name}</h1>
+          <p className="text-xs text-muted-foreground font-mono truncate">{app.slug}</p>
         </div>
-        <Badge variant={app.status === "active" ? "default" : "outline"}>
-          {app.status === "active" ? "已启用" : "草稿"}
-        </Badge>
-        {app.registry && <Badge variant="outline">来自应用市场</Badge>}
-        {app.listing === "listed" ? (
-          <Badge variant="default">已上架</Badge>
-        ) : app.listing === "pending" ? (
-          <Badge variant="outline">审核中</Badge>
-        ) : app.listing === "rejected" ? (
-          <Badge variant="destructive">已拒绝</Badge>
-        ) : null}
+        <div className="flex items-center gap-2 flex-wrap min-w-0 max-sm:w-full">
+          <Badge variant={app.status === "active" ? "default" : "outline"}>
+            {app.status === "active" ? "已启用" : "草稿"}
+          </Badge>
+          {app.registry && <Badge variant="outline">来自应用市场</Badge>}
+          {app.listing === "listed" ? (
+            <Badge variant="default">已上架</Badge>
+          ) : app.listing === "pending" ? (
+            <Badge variant="outline">审核中</Badge>
+          ) : app.listing === "rejected" ? (
+            <Badge variant="destructive">已拒绝</Badge>
+          ) : null}
+        </div>
       </div>
 
       {/* Mobile nav */}
@@ -150,7 +155,12 @@ export function AppDetailPage() {
 
         <div className="flex-1 min-w-0">
           {section === "basic-info" && (
-            <BasicInfoSection key={app.updated_at} app={app} onUpdate={refreshApp} backPath={backPath} />
+            <BasicInfoSection
+              key={app.updated_at}
+              app={app}
+              onUpdate={refreshApp}
+              backPath={backPath}
+            />
           )}
           {section === "install-app" && <InstallAppSection appId={id!} />}
           {section === "distribution" && <DistributionSection app={app} onUpdate={refreshApp} />}
@@ -169,7 +179,15 @@ export function AppDetailPage() {
 
 // ==================== Basic Information (merged Settings + Credentials) ====================
 
-function BasicInfoSection({ app, onUpdate, backPath }: { app: any; onUpdate: () => void; backPath: string }) {
+function BasicInfoSection({
+  app,
+  onUpdate,
+  backPath,
+}: {
+  app: any;
+  onUpdate: () => void;
+  backPath: string;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { confirm, ConfirmDialog } = useConfirm();
@@ -282,12 +300,12 @@ function BasicInfoSection({ app, onUpdate, backPath }: { app: any; onUpdate: () 
               disabled={!!app.registry}
             />
             {!app.registry ? (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   {error ? <span className="text-xs text-destructive">{error}</span> : null}
                   {success ? <span className="text-xs text-primary">{success}</span> : null}
                 </div>
-                <Button type="submit" size="sm" disabled={saving}>
+                <Button type="submit" size="sm" className="max-sm:h-11 shrink-0" disabled={saving}>
                   {saving ? "..." : "保存"}
                 </Button>
               </div>
@@ -300,7 +318,7 @@ function BasicInfoSection({ app, onUpdate, backPath }: { app: any; onUpdate: () 
       {app.registry ? (
         <Card>
           <CardContent>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">来自应用市场</Badge>
               <span className="text-xs text-muted-foreground">
                 此应用来自应用市场 Registry，配置不可编辑。
@@ -320,7 +338,7 @@ function BasicInfoSection({ app, onUpdate, backPath }: { app: any; onUpdate: () 
             <CardTitle>说明文档</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
+            <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words max-w-full font-mono leading-relaxed">
               {app.readme
                 .replace(/\{hub_url\}/g, window.location.origin)
                 .replace(/\{your_token\}/g, "<your_token>")}
@@ -339,11 +357,11 @@ function BasicInfoSection({ app, onUpdate, backPath }: { app: any; onUpdate: () 
           </CardHeader>
           <CardContent className="space-y-2 text-xs font-mono text-muted-foreground">
             <p className="font-sans text-xs font-medium text-foreground">HTTP 发消息</p>
-            <pre className="p-2 rounded-md bg-muted/30 border overflow-x-auto whitespace-pre-wrap">{`curl -X POST ${window.location.origin}/bot/v1/message/send \\
+            <pre className="p-2 rounded-md bg-muted/30 border max-w-full overflow-x-auto break-all whitespace-pre-wrap">{`curl -X POST ${window.location.origin}/bot/v1/message/send \\
   -H "Authorization: Bearer <your_token>" \\
   -d '{"content":"hello"}'`}</pre>
             <p className="font-sans text-xs font-medium text-foreground">WebSocket 连接</p>
-            <pre className="p-2 rounded-md bg-muted/30 border overflow-x-auto whitespace-pre-wrap">{`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/bot/v1/ws?token=<your_token>`}</pre>
+            <pre className="p-2 rounded-md bg-muted/30 border max-w-full overflow-x-auto break-all whitespace-pre-wrap">{`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/bot/v1/ws?token=<your_token>`}</pre>
           </CardContent>
         </Card>
       ) : null}
@@ -376,7 +394,7 @@ function BasicInfoSection({ app, onUpdate, backPath }: { app: any; onUpdate: () 
           <CardDescription>删除后所有安装也将被移除，此操作不可撤销。</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" size="sm" onClick={handleDelete}>
+          <Button variant="destructive" size="sm" className="max-sm:h-11" onClick={handleDelete}>
             <Trash2 className="w-3.5 h-3.5 mr-1" /> 删除 App
           </Button>
         </CardContent>
@@ -399,13 +417,13 @@ function IntegrationTokenGuide({ app }: { app: any }) {
       <CardContent className="space-y-3 text-xs">
         <div className="space-y-1">
           <p className="font-medium text-foreground">HTTP 发消息</p>
-          <pre className="p-2 rounded-md bg-muted/30 border font-mono overflow-x-auto whitespace-pre-wrap">{`curl -X POST ${hubUrl}/bot/v1/message/send \\
+          <pre className="p-2 rounded-md bg-muted/30 border font-mono max-w-full overflow-x-auto break-all whitespace-pre-wrap">{`curl -X POST ${hubUrl}/bot/v1/message/send \\
   -H "Authorization: Bearer {token}" \\
   -d '{"content":"hello"}'`}</pre>
         </div>
         <div className="space-y-1">
           <p className="font-medium text-foreground">WebSocket 连接</p>
-          <pre className="p-2 rounded-md bg-muted/30 border font-mono overflow-x-auto whitespace-pre-wrap">{`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/bot/v1/ws?token={token}`}</pre>
+          <pre className="p-2 rounded-md bg-muted/30 border font-mono max-w-full overflow-x-auto break-all whitespace-pre-wrap">{`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/bot/v1/ws?token={token}`}</pre>
         </div>
       </CardContent>
     </Card>
@@ -428,7 +446,11 @@ function SecretField({
 
   function handleCopy() {
     if (!navigator.clipboard?.writeText) {
-      toast({ variant: "destructive", title: "复制失败", description: "当前浏览器不支持自动复制，请手动选中复制" });
+      toast({
+        variant: "destructive",
+        title: "复制失败",
+        description: "当前浏览器不支持自动复制，请手动选中复制",
+      });
       return;
     }
     navigator.clipboard
@@ -447,16 +469,23 @@ function SecretField({
       <p className="text-xs font-medium">{label}</p>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
       <div className="flex items-center gap-2 p-2 rounded-md border bg-background">
-        <code className="text-xs font-mono flex-1 break-all">{show ? value : masked}</code>
+        <code className="text-xs font-mono flex-1 min-w-0 break-all">{show ? value : masked}</code>
         <Button
           variant="ghost"
           size="icon-xs"
+          className="max-sm:size-11"
           onClick={() => setShow(!show)}
           aria-label={show ? "隐藏" : "显示"}
         >
           {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         </Button>
-        <Button variant="ghost" size="icon-xs" onClick={handleCopy} aria-label="复制">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="max-sm:size-11"
+          onClick={handleCopy}
+          aria-label="复制"
+        >
           {copied ? (
             <Check className="w-3.5 h-3.5 text-primary" />
           ) : (
@@ -547,8 +576,8 @@ function InstallAppSection({ appId }: { appId: string }) {
           {bots.length === 0 ? (
             <p className="text-sm text-muted-foreground">请先创建一个账号，然后再安装应用。</p>
           ) : (
-            <div className="flex gap-2 items-end">
-              <div className="flex-1 space-y-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1 min-w-0 space-y-1">
                 <label htmlFor="install-bot-select" className="text-xs text-muted-foreground">
                   账号
                 </label>
@@ -556,7 +585,7 @@ function InstallAppSection({ appId }: { appId: string }) {
                   id="install-bot-select"
                   value={botId}
                   onChange={(e) => setBotId(e.target.value)}
-                  className="w-full h-8 px-2 rounded-md border bg-background text-xs outline-none"
+                  className="w-full h-8 px-2 rounded-md border bg-background text-xs outline-none max-sm:h-11"
                 >
                   {bots.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -565,7 +594,7 @@ function InstallAppSection({ appId }: { appId: string }) {
                   ))}
                 </select>
               </div>
-              <div className="flex-1 space-y-1">
+              <div className="flex-1 min-w-0 space-y-1">
                 <label htmlFor="install-handle-input" className="text-xs text-muted-foreground">
                   Handle
                 </label>
@@ -574,14 +603,14 @@ function InstallAppSection({ appId }: { appId: string }) {
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
                   placeholder="如 notify"
-                  className="h-8 text-xs font-mono"
+                  className="h-8 text-xs font-mono min-w-0 max-sm:h-11"
                 />
               </div>
               <Button
                 size="sm"
                 onClick={handleInstall}
                 disabled={installing || !botId || !handle.trim()}
-                className="h-8"
+                className="h-8 shrink-0 max-sm:h-11"
               >
                 {installing && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
                 安装
@@ -598,26 +627,30 @@ function InstallAppSection({ appId }: { appId: string }) {
         <div className="space-y-2">
           {installations.map((ins) => (
             <Card key={ins.id}>
-              <CardContent className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{ins.bot_name || ins.bot_id}</span>
+              <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <span className="text-sm font-medium min-w-0 truncate">
+                      {ins.bot_name || ins.bot_id}
+                    </span>
                     {ins.handle ? (
-                      <Badge variant="outline" className="text-xs font-mono">
+                      <Badge variant="outline" className="text-xs font-mono shrink-0">
                         @{ins.handle}
                       </Badge>
                     ) : null}
                   </div>
-                  <p className="text-xs text-muted-foreground font-mono">{ins.id}</p>
+                  <p className="text-xs text-muted-foreground font-mono truncate break-all">
+                    {ins.id}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Badge variant={ins.enabled ? "default" : "outline"}>
                     {ins.enabled ? "启用" : "禁用"}
                   </Badge>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-destructive"
+                    className="h-7 text-xs text-destructive max-sm:size-11"
                     aria-label="卸载"
                     onClick={() => handleDelete(ins.id)}
                   >
@@ -659,7 +692,10 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
   const { toast } = useToast();
 
   useEffect(() => {
-    api.listAppReviews(app.id).then(setReviews).catch(() => {});
+    api
+      .listAppReviews(app.id)
+      .then(setReviews)
+      .catch(() => {});
   }, [app.id]);
 
   async function handleRequestListing() {
@@ -667,7 +703,10 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
     try {
       await api.requestListing(app.id);
       onUpdate();
-      api.listAppReviews(app.id).then(setReviews).catch(() => {});
+      api
+        .listAppReviews(app.id)
+        .then(setReviews)
+        .catch(() => {});
     } catch (e: any) {
       toast({ variant: "destructive", title: "提交审核失败", description: e.message });
     }
@@ -689,13 +728,13 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
         </CardHeader>
         <CardContent className="space-y-3">
           {app.listing === "listed" ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="default">已上架</Badge>
               <span className="text-xs text-muted-foreground">你的应用已在应用市场中展示。</span>
             </div>
           ) : app.listing === "pending" ? (
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">审核中</Badge>
                 <span className="text-xs text-muted-foreground">
                   上架申请已提交，等待管理员审核。
@@ -704,7 +743,7 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
             </div>
           ) : app.listing === "rejected" ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="destructive">已拒绝</Badge>
                 {app.listing_reject_reason ? (
                   <span className="text-xs text-destructive">
@@ -712,7 +751,13 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
                   </span>
                 ) : null}
               </div>
-              <Button size="sm" variant="outline" disabled={loading} onClick={handleRequestListing}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="max-sm:h-11"
+                disabled={loading}
+                onClick={handleRequestListing}
+              >
                 {loading ? "..." : "重新申请"}
               </Button>
             </div>
@@ -721,7 +766,13 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
               <p className="text-xs text-muted-foreground">
                 你的应用尚未上架。上架后其他用户可以搜索并安装。
               </p>
-              <Button size="sm" variant="outline" disabled={loading} onClick={handleRequestListing}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="max-sm:h-11"
+                disabled={loading}
+                onClick={handleRequestListing}
+              >
                 {loading ? "..." : "申请上架"}
               </Button>
             </div>
@@ -737,7 +788,7 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
           <CardContent>
             <div className="space-y-3">
               {reviews.map((review: any) => (
-                <div key={review.id} className="flex items-start gap-3 text-sm">
+                <div key={review.id} className="flex flex-wrap items-start gap-x-3 gap-y-1 text-sm">
                   <span className="text-xs text-muted-foreground whitespace-nowrap mt-0.5">
                     {new Date(review.created_at * 1000).toLocaleString()}
                   </span>
@@ -748,7 +799,9 @@ function DistributionSection({ app, onUpdate }: { app: any; onUpdate: () => void
                     <span className="text-xs text-muted-foreground">v{review.version}</span>
                   )}
                   {review.reason && (
-                    <span className="text-xs text-muted-foreground truncate">{review.reason}</span>
+                    <span className="text-xs text-muted-foreground min-w-0 break-words">
+                      {review.reason}
+                    </span>
                   )}
                 </div>
               ))}
@@ -813,19 +866,19 @@ function EventSubscriptionsSection({ app, onUpdate }: { app: any; onUpdate: () =
           <CardDescription>Bot 收到的消息将 POST 到此地址</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               placeholder="https://your-app.example.com/webhook"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
-              className="h-8 text-xs font-mono flex-1"
+              className="h-8 text-xs font-mono flex-1 min-w-0"
             />
             <Button
               size="sm"
               variant="outline"
               onClick={handleVerify}
               disabled={verifying || !webhookUrl.trim()}
-              className="h-8"
+              className="h-8 shrink-0 max-sm:h-11"
             >
               {verifying ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -848,21 +901,26 @@ function EventSubscriptionsSection({ app, onUpdate }: { app: any; onUpdate: () =
           <CardTitle>订阅事件</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {EVENT_TYPES.map((et) => (
-              <label key={et.key} className="flex items-center gap-2 cursor-pointer">
+              <label
+                key={et.key}
+                className="flex items-center gap-2 min-w-0 cursor-pointer max-sm:min-h-11"
+              >
                 <input
                   type="checkbox"
                   checked={events.includes(et.key)}
                   onChange={() => toggleEvent(et.key)}
-                  className="w-3.5 h-3.5 accent-primary"
+                  className="w-3.5 h-3.5 shrink-0 accent-primary"
                 />
-                <span className="text-xs">{et.label}</span>
-                <span className="text-xs text-muted-foreground font-mono">{et.key}</span>
+                <span className="text-xs shrink-0">{et.label}</span>
+                <span className="text-xs text-muted-foreground font-mono min-w-0 truncate">
+                  {et.key}
+                </span>
               </label>
             ))}
           </div>
-          <Button size="sm" onClick={handleSave} disabled={saving}>
+          <Button size="sm" className="max-sm:h-11" onClick={handleSave} disabled={saving}>
             {saving ? "..." : "保存"}
           </Button>
         </CardContent>
@@ -914,7 +972,11 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
       }
       const result = await api.importMCP({ url: mcpUrl.trim(), headers });
       if (result.tools.length === 0) {
-        toast({ variant: "destructive", title: "未发现工具", description: "MCP 服务器未返回任何工具定义" });
+        toast({
+          variant: "destructive",
+          title: "未发现工具",
+          description: "MCP 服务器未返回任何工具定义",
+        });
       } else {
         if (tools.length > 0) {
           const ok = await confirm({
@@ -922,7 +984,10 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
             description: `将从 MCP 服务器导入 ${result.tools.length} 个工具，替换当前全部 ${tools.length} 个工具。确定继续？`,
             confirmText: "替换",
           });
-          if (!ok) { setImporting(false); return; }
+          if (!ok) {
+            setImporting(false);
+            return;
+          }
         }
         const imported = result.tools.map((t) => ({
           name: t.name,
@@ -963,23 +1028,23 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
   return (
     <div className="space-y-6">
       {ConfirmDialog}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold">命令 / 工具</h2>
           <p className="text-sm text-muted-foreground mt-1">
             定义应用的工具和命令，用户通过 /command 触发。
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs"
+            className="h-7 text-xs max-sm:h-11"
             onClick={() => setShowMcpImport(!showMcpImport)}
           >
             <Download className="w-3 h-3 mr-1" /> 从 MCP 导入
           </Button>
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={addTool}>
+          <Button variant="outline" size="sm" className="h-7 text-xs max-sm:h-11" onClick={addTool}>
             <Plus className="w-3 h-3 mr-1" /> 添加
           </Button>
         </div>
@@ -990,7 +1055,8 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
           <CardHeader>
             <CardTitle>从 MCP 服务器导入</CardTitle>
             <CardDescription>
-              输入 MCP 服务器的 Streamable HTTP 地址，自动发现并导入工具定义。导入会替换当前所有工具。
+              输入 MCP 服务器的 Streamable HTTP
+              地址，自动发现并导入工具定义。导入会替换当前所有工具。
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -1009,12 +1075,12 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
               className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs font-mono placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none"
               aria-label="自定义请求头"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 onClick={handleImportMCP}
                 disabled={importing || !mcpUrl.trim()}
-                className="h-7 text-xs"
+                className="h-7 text-xs max-sm:h-11"
               >
                 {importing && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
                 {importing ? "正在发现..." : "发现工具"}
@@ -1023,7 +1089,7 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowMcpImport(false)}
-                className="h-7 text-xs"
+                className="h-7 text-xs max-sm:h-11"
               >
                 取消
               </Button>
@@ -1040,19 +1106,19 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
         <Card key={i}>
           <CardContent>
             <div className="flex items-start gap-2">
-              <div className="flex-1 space-y-1">
-                <div className="flex gap-1">
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex flex-col gap-1 sm:flex-row">
                   <Input
                     placeholder="工具名（如 list_prs）"
                     value={tool.name}
                     onChange={(e) => updateTool(i, "name", e.target.value)}
-                    className="h-7 text-xs font-mono flex-1"
+                    className="h-7 text-xs font-mono flex-1 min-w-0"
                   />
                   <Input
                     placeholder="命令触发（如 pr）"
                     value={tool.command}
                     onChange={(e) => updateTool(i, "command", e.target.value)}
-                    className="h-7 text-xs font-mono w-36"
+                    className="h-7 text-xs font-mono w-full sm:w-36"
                   />
                 </div>
                 <Input
@@ -1074,7 +1140,7 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => removeTool(i)}
-                className="mt-1 text-destructive hover:text-destructive"
+                className="mt-1 text-destructive hover:text-destructive max-sm:size-11 max-sm:mt-0"
                 aria-label="删除工具"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -1085,7 +1151,7 @@ function ToolsEditor({ app, onUpdate }: { app: any; onUpdate: () => void }) {
       ))}
 
       {tools.length > 0 ? (
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button size="sm" className="max-sm:h-11" onClick={handleSave} disabled={saving}>
           {saving ? "..." : "保存工具"}
         </Button>
       ) : null}
@@ -1145,9 +1211,9 @@ function OAuthPermissionsSection({ app, onUpdate }: { app: any; onUpdate: () => 
                   type="checkbox"
                   checked={scopes.includes(s.key)}
                   onChange={() => toggleScope(s.key)}
-                  className="mt-0.5 accent-primary"
+                  className="mt-0.5 shrink-0 accent-primary"
                 />
-                <div>
+                <div className="min-w-0">
                   <span className="text-sm font-medium">{s.label}</span>
                   <span className="text-xs text-muted-foreground font-mono ml-2">{s.key}</span>
                   <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
@@ -1169,9 +1235,9 @@ function OAuthPermissionsSection({ app, onUpdate }: { app: any; onUpdate: () => 
                   type="checkbox"
                   checked={scopes.includes(s.key)}
                   onChange={() => toggleScope(s.key)}
-                  className="mt-0.5 accent-primary"
+                  className="mt-0.5 shrink-0 accent-primary"
                 />
-                <div>
+                <div className="min-w-0">
                   <span className="text-sm font-medium">{s.label}</span>
                   <span className="text-xs text-muted-foreground font-mono ml-2">{s.key}</span>
                   <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
@@ -1180,7 +1246,7 @@ function OAuthPermissionsSection({ app, onUpdate }: { app: any; onUpdate: () => 
             ))}
           </div>
 
-          <Button size="sm" onClick={handleSave} disabled={saving}>
+          <Button size="sm" className="max-sm:h-11" onClick={handleSave} disabled={saving}>
             {saving ? "..." : "保存更改"}
           </Button>
         </CardContent>
